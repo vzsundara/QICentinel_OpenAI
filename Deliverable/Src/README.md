@@ -1,8 +1,8 @@
 # QI Sentinel Source
 
-Phase 1 scaffold, Phase 2 deterministic scanners, and the bounded Phase 3 Codex analysis adapter for the QI Sentinel synthetic quality-measure compliance proof of concept.
+Phase 1 scaffold, Phase 2 deterministic scanners, the bounded Phase 3 Codex analysis adapter, and the Phase 4 deterministic policy/action workflow for the QI Sentinel synthetic quality-measure compliance proof of concept.
 
-The checked-in `mock-platform/` directory contains four intentional synthetic defects. Matching clean representations are under `tests/fixtures/baseline/mock-platform/`. Four deterministic scanners produce validated canonical JSON with stable finding fingerprints. The optional Codex adapter enriches only `QI-SEM-001`; code keeps its rule ID and `escalate` disposition authoritative. Policy execution, remediation, and evidence-pack generation remain deferred to later phases.
+The checked-in `mock-platform/` directory contains four intentional synthetic defects. Matching clean representations are under `tests/fixtures/baseline/mock-platform/`. Four deterministic scanners produce validated canonical JSON with stable finding fingerprints. The optional Codex adapter enriches only `QI-SEM-001`; code keeps its rule ID and `escalate` disposition authoritative. The Phase 4 workflow evaluates all six policy conditions, applies only the two code-owned allowlisted fixes in enforce mode, holds all changes in observe mode, and records complete semantic and lineage escalations. Evidence-pack generation remains deferred to Phase 5.
 
 The adapter uses pinned `openai-codex==0.154.0`, a read-only sandbox, enterprise-compatible auto-review approval handling, an allowlisted and redacted context, a versioned structured-output schema, and an explicit deterministic fallback. It never reads the log fixture, applies a proposed patch, or treats repository text as instructions.
 
@@ -16,9 +16,10 @@ sentinel seed
 sentinel scan
 sentinel scan --platform tests/fixtures/baseline/mock-platform
 python -m pytest
+sentinel remediate --mode observe
 ```
 
-`sentinel scan` prints canonical findings JSON or writes it with `--output`. The `remediate` and `verify` commands remain safe shells that return a nonzero status until their planned phases are implemented.
+`sentinel scan` prints canonical findings JSON or writes it with `--output`. `sentinel remediate --mode observe` runs the gate and tests without changing remediation targets. Enforce mode is the policy default; it updates only the two allowlisted synthetic files after staged tests pass, then writes a local review payload and idempotency state under `artifacts/phase4/`. It does not create a Git branch, contact GitHub, push, merge, or deploy. The `verify` command remains a safe shell until Phase 5.
 
 ## Codex authentication
 

@@ -6,9 +6,9 @@ Build a reliable hackathon PoC in which one command detects four synthetic defec
 
 ## Plan status
 
-**Current milestone:** Phase 3 Codex analysis complete locally; Phase 0 external decisions remain
+**Current milestone:** Phase 4 policy gate and local actions complete; Phase 0 external decisions remain
 **Assessment date:** 17 September 2026  
-**Overall state:** Phases 1 through 3 implemented and tested under `Deliverable/Src/`
+**Overall state:** Phases 1 through 4 implemented and tested under `Deliverable/Src/`
 
 | Phase | Status | Depends on | Completion evidence |
 | --- | --- | --- | --- |
@@ -16,7 +16,7 @@ Build a reliable hackathon PoC in which one command detects four synthetic defec
 | 1. Scaffold | Complete locally | Phase 0 | Installable package, working CLI shell, and inspectable fixtures |
 | 2. Deterministic scanners | Complete locally | Phase 1 | Four seeded findings, zero baseline findings, deterministic JSON |
 | 3. Codex analysis | Complete locally | Phase 2 | Contract suite plus a schema-valid live read-only semantic analysis |
-| 4. Policy gate and actions | Not started | Phases 2–3 | Two fixes, two escalations, and idempotent rerun |
+| 4. Policy gate and actions | Complete locally | Phases 2–3 | Two fixes in one local PR payload, two escalations, and idempotent rerun |
 | 5. Evidence and CI | Not started | Phase 4 | Verified evidence pack and green least-privilege workflow |
 | 6. Demo and pitch | Not started | Phase 5 | Two successful five-minute rehearsals and reviewer feedback |
 
@@ -24,14 +24,14 @@ Build a reliable hackathon PoC in which one command detects four synthetic defec
 
 | Item | Observed state | Required action |
 | --- | --- | --- |
-| Git | Installed; current branch is `main` | Keep implementation work reviewable on a feature branch |
-| Working tree | `Deliverable/` is untracked | Review and commit the agreed document baseline before implementation |
+| Git | Installed; current branch is `feature/phase-4-policy-actions` | Keep the Phase 4 implementation reviewable and commit after review |
+| Working tree | Phase 4 implementation changes are present on the feature branch | Review and commit the completed phase |
 | Python | A Python 3.14.5 virtual environment exists at `Deliverable/Src/.venv` | Install or select Python 3.12 before final CI parity testing |
 | Codex CLI | Bundled `0.154.0` is authenticated with ChatGPT | Reverify unattended authentication during Phase 5 CI work |
 | GitHub CLI | Not installed or not on `PATH` | Install and authenticate before PR or Actions work |
 | Repository instructions | Root-level `AGENTS.md` is present | Keep repository-wide safety rules concise and current |
 | Ignore rules | `Deliverable/Src/.gitignore` excludes the local environment, credentials, caches, and artifacts | Add broader repository rules later only if needed |
-| Application and scanners | Phases 1 through 3 are implemented under `Deliverable/Src/` | Review Phase 3 output before beginning the policy gate |
+| Application and scanners | Phases 1 through 4 are implemented under `Deliverable/Src/` | Review Phase 4 output before beginning evidence and CI work |
 
 Status in this table is observational, not proof of authentication, authorization, or external-service availability.
 
@@ -157,22 +157,24 @@ The PoC is complete when all of the following are demonstrated from a clean chec
 
 ## Phase 4 — Policy gate and actions
 
+**Status:** Complete locally on 17 September 2026. The suite contains 57 passing tests. Enforce-mode integration prepares exactly two deterministic fixes in one local review payload and two escalations; observe mode applies no files; an identical rerun updates the same three records without duplication. No external pull request was opened.
+
 ### Work
 
-- Implement all six gate checks and the non-overridable hard floor.
-- Support `enforce` and `observe` modes.
-- Implement allowlisted patch application, branch naming, tests, and PR-body generation.
-- Combine the two permitted fixes into one reviewable PR.
-- Generate escalation records for semantic drift and missing lineage.
-- Use fingerprints to find and update existing open records.
-- Ensure no path merges or deploys a change.
+- [x] Implement all six gate checks and the non-overridable hard floor.
+- [x] Support `enforce` and `observe` modes.
+- [x] Implement allowlisted patch application, branch naming, tests, and PR-body generation.
+- [x] Combine the two permitted fixes into one reviewable local PR payload.
+- [x] Generate escalation records for semantic drift and missing lineage.
+- [x] Use fingerprints to find and update existing open records.
+- [x] Ensure no path merges, deploys, pushes, or contacts GitHub.
 
 ### Exit criteria
 
-- Enforce mode yields one PR containing two fixes and two escalation records.
-- Observe mode yields the same findings but no applied changes.
-- A second identical run creates no duplicate records.
-- Any failed gate condition changes the disposition to escalation or held.
+- [x] Enforce mode yields one local PR payload containing two fixes and two escalation records.
+- [x] Observe mode yields the same findings but no applied changes.
+- [x] A second identical run creates no duplicate records.
+- [x] Any failed gate condition changes the disposition to escalation or held.
 
 ## Phase 5 — Evidence and CI
 

@@ -7,6 +7,7 @@ import json
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 from qi_sentinel.cli import main
 
@@ -24,18 +25,27 @@ class CliSmokeTests(unittest.TestCase):
         self.assertIn("valid (4 seeds)", output.getvalue())
         self.assertIn("sentinel scan", output.getvalue())
 
-    def test_later_phase_commands_fail_safely(self) -> None:
-        for command, phase in (
-            ("remediate", "Phase 4"),
-            ("verify", "Phase 5"),
-        ):
-            with self.subTest(command=command):
-                output = io.StringIO()
-                with redirect_stdout(output):
-                    status = main([command])
+    def test_phase_five_command_fails_safely(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            status = main(["verify"])
 
-                self.assertEqual(status, 2)
-                self.assertIn(phase, output.getvalue())
+        self.assertEqual(status, 2)
+        self.assertIn("Phase 5", output.getvalue())
+
+    def test_remediate_emits_action_cycle_json(self) -> None:
+        class FakeResult:
+            def to_json(self) -> str:
+                return '{"mode":"observe"}\n'
+
+        output = io.StringIO()
+        with patch("qi_sentinel.cli.run_action_cycle", return_value=FakeResult()) as cycle:
+            with redirect_stdout(output):
+                status = main(["remediate", "--root", str(PROJECT_ROOT), "--mode", "observe"])
+
+        self.assertEqual(status, 0)
+        self.assertEqual(json.loads(output.getvalue()), {"mode": "observe"})
+        self.assertEqual(cycle.call_args.kwargs["mode"], "observe")
 
     def test_scan_emits_canonical_json(self) -> None:
         output = io.StringIO()

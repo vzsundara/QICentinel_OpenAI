@@ -10,6 +10,7 @@ from typing import Sequence
 
 from qi_sentinel import __version__
 from qi_sentinel.models import findings_json
+from qi_sentinel.policy import PolicyConfigError, run_action_cycle
 from qi_sentinel.scanners import ScanContext, ScanInputError, scan_platform
 
 EXPECTED_RULE_IDS = {
@@ -77,9 +78,31 @@ def _build_parser() -> argparse.ArgumentParser:
 
     remediate_parser = subparsers.add_parser(
         "remediate",
-        help="Apply policy-approved fixes (available in Phase 4).",
+        help="Run the local policy gate and prepare reviewable actions.",
     )
-    remediate_parser.set_defaults(handler=_not_implemented, phase="Phase 4")
+    remediate_parser.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Project root containing config/policy.yml and mock-platform/.",
+    )
+    remediate_parser.add_argument(
+        "--mode",
+        choices=("enforce", "observe"),
+        help="Override the versioned policy mode for this run.",
+    )
+    remediate_parser.add_argument(
+        "--state",
+        type=Path,
+        default=Path("artifacts/phase4/action-state.json"),
+        help="Local idempotency state path, relative to --root unless absolute.",
+    )
+    remediate_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optional canonical result path, relative to --root unless absolute.",
+    )
+    remediate_parser.set_defaults(handler=_remediate)
 
     verify_parser = subparsers.add_parser(
         "verify",
@@ -174,6 +197,45 @@ def _scan(args: argparse.Namespace) -> int:
     output_path.write_text(output, encoding="utf-8", newline="\n")
     print(f"Wrote deterministic findings to {context.display_path(output_path)}")
     return 0
+
+
+def _remediate(args: argparse.Namespace) -> int:
+    """Run the deterministic policy and local action workflow."""
+
+    root = args.root.resolve()
+    try:
+        result = run_action_cycle(
+            root,
+            mode=args.mode,
+            state_path=args.state,
+        )
+    except (PolicyConfigError, ScanInputError, ValueError) as error:
+        print(f"Remediation failed: {error}", file=sys.stderr)
+        return 2
+
+    output = result.to_json()
+    if args.output is None:
+        print(output, end="")
+        return 0
+
+    try:
+        output_path = _path_within_root(root, args.output)
+    except ValueError as error:
+        print(f"Remediation failed: {error}", file=sys.stderr)
+        return 2
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(output, encoding="utf-8", newline="\n")
+    print(f"Wrote Phase 4 action result to {output_path.relative_to(root).as_posix()}")
+    return 0
+
+
+def _path_within_root(root: Path, path: Path) -> Path:
+    resolved = path.resolve() if path.is_absolute() else (root / path).resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as error:
+        raise ValueError("Output path must remain within the project root.") from error
+    return resolved
 
 
 def _not_implemented(args: argparse.Namespace) -> int:
