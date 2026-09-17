@@ -1,0 +1,16 @@
+specification_id: synthetic-2026
+measure_id: CBP
+title: Synthetic Blood Pressure Control Measure
+effective_date: 2026-01-01
+
+population:
+  value_set:
+    id: VS_HYPERTENSION
+    version: "2026"
+  denominator_exclusions:
+    - HOSPICE_ENCOUNTER
+    - PALLIATIVE_CARE
+
+control_expectations:
+  version_pins_must_match_manifest: true
+  implemented_exclusions_must_match_specification: true

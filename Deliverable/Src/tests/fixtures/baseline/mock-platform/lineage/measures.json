@@ -1,0 +1,18 @@
+{
+  "export_type": "synthetic-lineage",
+  "measurement_period": "2026",
+  "records": [
+    {
+      "measure_id": "CBP",
+      "source": "SYNTHETIC_LAKE.CBP_INPUT",
+      "measure_run": "SYNTHETIC_DATABRICKS.CBP_RUN",
+      "reporting_output": "SYNTHETIC_SNOWFLAKE.CBP_RATE"
+    },
+    {
+      "measure_id": "COL",
+      "source": "SYNTHETIC_LAKE.COL_INPUT",
+      "measure_run": "SYNTHETIC_DATABRICKS.COL_RUN",
+      "reporting_output": "SYNTHETIC_SNOWFLAKE.COL_RATE"
+    }
+  ]
+}

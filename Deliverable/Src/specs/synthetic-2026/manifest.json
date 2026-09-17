@@ -1,0 +1,12 @@
+{
+  "specification_id": "synthetic-2026",
+  "effective_date": "2026-01-01",
+  "classification": "original-synthetic-content",
+  "files": [
+    "cbp.yml",
+    "col.yml",
+    "value_sets.json"
+  ],
+  "checksum_algorithm": "sha256",
+  "checksum_status": "computed-at-collection-time"
+}

@@ -1,0 +1,11 @@
+specification_id: synthetic-2026
+measure_id: COL
+title: Synthetic Colorectal Screening Measure
+effective_date: 2026-01-01
+
+control_expectations:
+  lineage_required: true
+  required_stages:
+    - source
+    - measure_run
+    - reporting_output

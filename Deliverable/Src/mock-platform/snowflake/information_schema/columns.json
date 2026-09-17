@@ -1,0 +1,13 @@
+{
+  "export_type": "synthetic-information-schema",
+  "columns": [
+    {
+      "table_schema": "RPT",
+      "table_name": "MEMBER_MEASURE",
+      "column_name": "DOB",
+      "tag": "SYNTHETIC_PHI",
+      "tag_value": "DATE_OF_BIRTH",
+      "masking_policy": null
+    }
+  ]
+}

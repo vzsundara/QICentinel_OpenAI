@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "classification": "synthetic-only",
+  "seeds": [
+    {
+      "rule_id": "QI-MASK-001",
+      "title": "Masking policy removed from a tagged reporting column",
+      "area": "snowflake-reporting",
+      "category": "access-control-restoration",
+      "expected_disposition": "auto-fix",
+      "auto_fix_allowed": true,
+      "expected": "RPT.MEMBER_MEASURE.DOB is protected by GOV.PHI_MASK_DOB.",
+      "observed": "The synthetic column export is tagged but has no attached masking policy, and the policy DDL omits the attachment statement.",
+      "seeded_files": [
+        "mock-platform/snowflake/policies/member_measure.sql",
+        "mock-platform/snowflake/information_schema/columns.json"
+      ],
+      "baseline_files": [
+        "tests/fixtures/baseline/mock-platform/snowflake/policies/member_measure.sql",
+        "tests/fixtures/baseline/mock-platform/snowflake/information_schema/columns.json"
+      ]
+    },
+    {
+      "rule_id": "QI-LOG-001",
+      "title": "Synthetic member fields written to an application log",
+      "area": "cross-cutting-logging",
+      "category": "sensitive-log-redaction",
+      "expected_disposition": "auto-fix",
+      "auto_fix_allowed": true,
+      "expected": "Configured sensitive fields are redacted before a log record is written.",
+      "observed": "Redaction is disabled and the synthetic log contains member_id and date_of_birth values.",
+      "seeded_files": [
+        "mock-platform/pipelines/logging.yml",
+        "mock-platform/logs/measure-runner.log"
+      ],
+      "baseline_files": [
+        "tests/fixtures/baseline/mock-platform/pipelines/logging.yml",
+        "tests/fixtures/baseline/mock-platform/logs/measure-runner.log"
+      ]
+    },
+    {
+      "rule_id": "QI-SEM-001",
+      "title": "Synthetic measure logic differs from the approved specification",
+      "area": "databricks-measure-compute",
+      "category": "measure-semantics",
+      "expected_disposition": "escalate",
+      "auto_fix_allowed": false,
+      "expected": "CBP uses VS_HYPERTENSION version 2026 and excludes both hospice and palliative care.",
+      "observed": "The SQL pins version 2025 and excludes hospice only.",
+      "specification_files": [
+        "specs/synthetic-2026/cbp.yml",
+        "specs/synthetic-2026/value_sets.json"
+      ],
+      "seeded_files": [
+        "mock-platform/measures/cbp/cbp_rate.sql"
+      ],
+      "baseline_files": [
+        "tests/fixtures/baseline/mock-platform/measures/cbp/cbp_rate.sql"
+      ]
+    },
+    {
+      "rule_id": "QI-LIN-001",
+      "title": "Required synthetic lineage record is missing",
+      "area": "cross-cutting-lineage",
+      "category": "evidence-attestation",
+      "expected_disposition": "escalate",
+      "auto_fix_allowed": false,
+      "expected": "Both CBP and COL have source-to-run-to-output lineage records.",
+      "observed": "The lineage export contains CBP but no record for COL.",
+      "specification_files": [
+        "specs/synthetic-2026/col.yml"
+      ],
+      "seeded_files": [
+        "mock-platform/lineage/measures.json"
+      ],
+      "baseline_files": [
+        "tests/fixtures/baseline/mock-platform/lineage/measures.json"
+      ]
+    }
+  ]
+}

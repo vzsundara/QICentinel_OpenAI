@@ -1,0 +1,27 @@
+version: 1
+
+project:
+  name: qi-sentinel
+  data_classification: synthetic-only
+  control_plane_only: true
+
+paths:
+  platform: mock-platform
+  specification: specs/synthetic-2026
+  seed_catalog: tests/fixtures/seeds.json
+  artifacts: artifacts
+
+runtime:
+  internet_access: disabled
+  redact_before_model_analysis: true
+  deterministic_output: true
+
+required_measures:
+  - CBP
+  - COL
+
+required_rules:
+  - QI-MASK-001
+  - QI-LOG-001
+  - QI-SEM-001
+  - QI-LIN-001

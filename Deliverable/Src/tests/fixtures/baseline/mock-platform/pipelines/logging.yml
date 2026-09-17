@@ -1,0 +1,15 @@
+version: 1
+application: synthetic-measure-runner
+
+handlers:
+  file:
+    path: mock-platform/logs/measure-runner.log
+    format: json
+
+redaction:
+  enabled: true
+  fields:
+    - member_id
+    - date_of_birth
+    - dob
+  replacement: "[REDACTED]"

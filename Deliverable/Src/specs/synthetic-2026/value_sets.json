@@ -1,0 +1,11 @@
+{
+  "registry_id": "synthetic-valuesets-2026",
+  "classification": "original-synthetic-content",
+  "value_sets": [
+    {
+      "id": "VS_HYPERTENSION",
+      "version": "2026",
+      "effective_date": "2026-01-01"
+    }
+  ]
+}

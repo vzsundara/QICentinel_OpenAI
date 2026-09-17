@@ -1,0 +1,12 @@
+version: 1
+application: synthetic-measure-runner
+
+handlers:
+  file:
+    path: mock-platform/logs/measure-runner.log
+    format: json
+
+redaction:
+  enabled: false
+  fields: []
+  replacement: "[REDACTED]"

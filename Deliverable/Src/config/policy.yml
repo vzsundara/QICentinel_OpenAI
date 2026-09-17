@@ -1,0 +1,53 @@
+version: 1
+mode: enforce
+
+defaults:
+  minimum_confidence: 0.95
+  auto_fix_allowed: false
+
+rules:
+  QI-MASK-001:
+    category: access-control-restoration
+    severity: critical
+    auto_fix_allowed: true
+    owner: security
+  QI-LOG-001:
+    category: sensitive-log-redaction
+    severity: high
+    auto_fix_allowed: true
+    owner: application-engineering
+  QI-SEM-001:
+    category: measure-semantics
+    severity: high
+    auto_fix_allowed: false
+    owner: quality-analytics
+  QI-LIN-001:
+    category: evidence-attestation
+    severity: medium
+    auto_fix_allowed: false
+    owner: data-governance
+
+gate:
+  require_all:
+    - rule_allows_auto_fix
+    - does_not_change_measure_population
+    - confidence_meets_threshold
+    - files_and_commands_are_allowlisted
+    - required_tests_pass
+    - submitted_for_human_review
+  never_auto_apply:
+    - measure-semantics
+    - evidence-attestation
+    - access-grant-widening
+
+allowlists:
+  files:
+    - mock-platform/snowflake/policies/member_measure.sql
+    - mock-platform/pipelines/logging.yml
+  commands:
+    - python -m pytest
+    - sentinel verify
+
+pull_requests:
+  merge: never
+  require_human_review: true
