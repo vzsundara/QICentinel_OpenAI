@@ -1,26 +1,21 @@
 # QI Sentinel — Codex Setup Checklist (new machine)
 
-Prepared 17 Sep 2026. Status on the original machine: docs complete (README, brief, design doc v3.0, handoff); no code yet; Codex not yet set up.
+Prepared 17 Sep 2026. Status: all docs committed and pushed to `origin/main` as `ba30059` ("Project Handoff preparation"); no code yet; Codex not yet set up on the build machine.
 Goal on the new machine: reach a clean baseline where Codex can start **Phase 1 — Scaffold** from the design doc.
 
 Commands are shown for **Windows (PowerShell)** and **macOS/Linux (bash)** where they differ.
 
 ---
 
-## 0. Before leaving the original machine
+## 0. Handoff status
 
-The docs exist only in `D:\Work\Quest\QI Sentinel` — they are **not in GitHub yet** (README is modified, 3 files untracked). Pick one:
-
-- [ ] **Option A — push (preferred, once Q7 is settled):** commit all docs and push to `origin/main`.
-- [ ] **Option B — carry them:** copy these files to the new machine (USB, OneDrive, email):
-  - `README.md` (modified version)
-  - `PoC Brief - QI Sentinel.md`
-  - `QI-Sentinel-Design-Doc.html`
-  - `QI-Sentinel-PoC-Handoff.md`
-  - `Codex-Setup-Checklist.md` (this file)
-  - `QI-Sentinel-Project-Notes.md` (decision log, rationale, current state)
-
-- [ ] **Q7 resolved:** company policy allows a public GitHub repo for hackathon code — or make `vzsundara/QICentinel_OpenAI` private first (`gh repo edit --visibility private --accept-visibility-change-consequences`).
+- [x] Docs committed and pushed to `origin/main` in `ba30059` "Project Handoff preparation": README, brief, design doc v3.0, handoff, this checklist, and project notes. A fresh clone has everything; nothing needs to be copied by hand.
+- [ ] **TODO: repo visibility (Q7).** `vzsundara/QICentinel_OpenAI` is still **public**. Confirm company policy allows it, or make it private before any code is pushed and before the Actions secret is added:
+  ```bash
+  gh repo edit vzsundara/QICentinel_OpenAI --visibility private --accept-visibility-change-consequences
+  gh repo view vzsundara/QICentinel_OpenAI --json visibility
+  ```
+  Private repos draw on the account's GitHub Actions minutes; check the plan before relying on scheduled runs.
 
 ---
 
@@ -69,11 +64,7 @@ cd "QI Sentinel"
 git status
 ```
 
-- [ ] If you used **Option B**, copy the docs into the repo folder now, then commit:
-  ```bash
-  git add README.md "PoC Brief - QI Sentinel.md" QI-Sentinel-Design-Doc.html QI-Sentinel-PoC-Handoff.md Codex-Setup-Checklist.md QI-Sentinel-Project-Notes.md
-  git commit -m "docs: design baseline (brief, design doc v3.0, handoff)"
-  ```
+- [ ] Handoff commit present: `git log --oneline -2` shows `ba30059 Project Handoff preparation`.
 - [ ] `git status` is clean — Codex should start from a committed baseline so every change is a reviewable diff.
 - [ ] Open `QI-Sentinel-Design-Doc.html` in a browser; keep §5, §7, and §13 handy.
 - [ ] Read `QI-Sentinel-Project-Notes.md` for the decisions and open items behind the docs.
@@ -150,6 +141,7 @@ QI-MASK-001 (auto-fix), QI-LOG-001 (auto-fix), QI-SEM-001 (escalate), QI-LIN-001
 
 ## 7. GitHub Actions prerequisites
 
+- [ ] Repo visibility decided (section 0 TODO) before adding any secret.
 - [ ] Actions enabled on the repo (Settings → Actions).
 - [ ] Secret set (you will be prompted for the value; it is not echoed):
   ```bash
@@ -164,7 +156,7 @@ QI-MASK-001 (auto-fix), QI-LOG-001 (auto-fix), QI-SEM-001 (escalate), QI-LIN-001
 
 | # | Question | Blocks |
 |---|---|---|
-| Q7 | Public repo allowed? | Pushing |
+| Q7 | Public repo allowed? **TODO: repo is still public** | Pushing code, Actions secret |
 | Q8 | SDK auth for unattended runs | CI (Phase 5) |
 | Q3 | Build hours and team size | Phase scope |
 | Q5 | Sponsor and their most painful finding class | Seed choice |
@@ -198,4 +190,5 @@ git status --short
 - [ ] `git status --short` is empty
 - [ ] `AGENTS.md` exists and is committed
 - [ ] Codex CLI answered the read-only smoke prompt
+- [ ] Repo visibility decided: private, or public approved
 - [ ] Ready for Phase 1

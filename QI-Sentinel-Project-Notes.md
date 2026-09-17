@@ -9,7 +9,7 @@ Last updated: 17 Sep 2026. Covers everything decided while producing the design 
 | File | What it is | Status |
 |---|---|---|
 | `QI-Sentinel-PoC-Handoff.md` | Original handoff prompt: hackathon context, idea, first scope | Source input, unchanged |
-| `README.md` | Repo README from `vzsundara/QICentinel_OpenAI`, updated with the merged plan and Python stack | Modified, not committed |
+| `README.md` | Repo README from `vzsundara/QICentinel_OpenAI`, updated with the merged plan and Python stack | Committed in `ba30059` |
 | `PoC Brief - QI Sentinel.md` | Plain brief: objective, stack, requirements, deliverables, open questions | v3 (Python) |
 | `QI-Sentinel-Design-Doc.html` | Full design document, PDF-printable (browser print, A4) | v3.0 |
 | `Codex-Setup-Checklist.md` | Step-by-step setup for continuing on another machine | Current |
@@ -77,6 +77,10 @@ Last updated: 17 Sep 2026. Covers everything decided while producing the design 
 ### D7 — Build to continue on a different machine
 - Readiness checked on the original machine (section 6); setup checklist written for the new machine.
 
+### D8 — Handoff pushed
+- All six documents committed and pushed to `origin/main` as `ba30059` "Project Handoff preparation" on 17 Sep 2026.
+- Repo left public; making it private is an open TODO (Q7).
+
 ---
 
 ## 4. Current architecture (quick reference)
@@ -119,7 +123,7 @@ Last updated: 17 Sep 2026. Covers everything decided while producing the design 
 | Q4 | Submission portal character limits | Unknown; 500-character summary ready |
 | Q5 | Compliance/security sponsor and their most painful recent finding class | None yet; masking drift is the headline seed |
 | Q6 | OpenAI Platform project key available for Actions | Yes, project-scoped, stored as a secret |
-| Q7 | Does company policy allow a public GitHub repo? | Yes for synthetic content; **confirm before pushing** |
+| Q7 | Does company policy allow a public GitHub repo? | **TODO:** repo is still public after the handoff push; confirm, or make private before code is pushed |
 | Q8 | How does `openai-codex` authenticate for unattended Actions runs? | API key; **verify in phase 3** |
 
 ---
@@ -137,23 +141,24 @@ Last updated: 17 Sep 2026. Covers everything decided while producing the design 
 | Hardware | 12 logical cores, 15.7 GB RAM, 37 GB free on D: ✅ |
 | Codex CLI | Not installed ❌ |
 | Codex / OpenAI auth | No `OPENAI_API_KEY`, no `~/.codex` sign-in ❌ |
-| Git identity | `user.name` / `user.email` not set ❌ |
-| Working tree | Docs uncommitted ⚠️ |
-| Repo visibility | Public (Q7 open) ⚠️ |
+| Git identity | Set before the handoff commit ✅ |
+| Working tree | Clean; docs pushed in `ba30059` ✅ |
+| Repo visibility | Public; **TODO** make private or get approval ⚠️ |
 
 ---
 
 ## 7. Git state
 
-- Remote: `https://github.com/vzsundara/QICentinel_OpenAI.git`, branch `main`, last remote commit `81f812b`.
-- Local changes: `README.md` modified; brief, design doc, handoff, checklist, and these notes untracked.
-- **Nothing committed or pushed.** A fresh clone elsewhere will not contain these docs — copy the folder or push after Q7.
+- Remote: `https://github.com/vzsundara/QICentinel_OpenAI.git`, branch `main`.
+- History: `81f812b` first commit (README only) → `ba30059` Project Handoff preparation (all docs).
+- Local and remote in sync; a fresh clone contains every document in this folder.
+- **TODO:** the repo is public. Decide on visibility before pushing code or adding secrets.
 
 ---
 
 ## 8. Next steps
 
-1. Settle Q7 (public repo), then either push the docs or copy this folder to the new machine.
+1. **TODO:** settle Q7. The repo is public; make it private or get approval before pushing code. Docs are already pushed (`ba30059`), so the new machine only needs `git clone`.
 2. Follow `Codex-Setup-Checklist.md` on the new machine (tools, sign-ins, venv, smoke tests, `AGENTS.md`, Actions secret).
 3. Verify Q8 during the SDK smoke test.
 4. Run the Phase 1 prompt from checklist §9; review the diff against design doc §5.
