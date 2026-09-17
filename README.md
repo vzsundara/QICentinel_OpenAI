@@ -24,21 +24,25 @@ QI Sentinel moves those controls earlier in the lifecycle:
 
 The mock repository is intentionally seeded with four realistic defects. In one monitoring cycle, QI Sentinel should find all four, automatically remediate two, escalate two, and generate one evidence pack.
 
-| ID | Seeded defect | Detection method | Policy decision |
-| --- | --- | --- | --- |
-| `QI-VS-001` | Outdated value-set OID following an annual specification update | Versioned manifest comparison | Auto-fix and verify |
-| `QI-LOG-001` | Synthetic member information written to application logs | Structured log and sensitive-field scan | Auto-fix with redaction and verify |
-| `QI-SEM-001` | Denominator exclusion no longer matches the approved specification | Logic/AST comparison | Escalate: measure semantics |
-| `QI-LIN-001` | Required data-lineage record is missing | Run-to-source-to-output chain validation | Escalate: evidence cannot be invented |
+| ID | Layer | Seeded defect | Detection method | Policy decision |
+| --- | --- | --- | --- | --- |
+| `QI-MASK-001` | Snowflake (reporting) | Masking policy removed from a PHI-tagged column in the reporting schema | Policy export vs. column-tag comparison | Auto-fix: restore the last approved policy and verify |
+| `QI-LOG-001` | Cross-cutting | Synthetic member information written to application logs | Structured log and sensitive-field scan | Auto-fix: redaction and verify |
+| `QI-SEM-001` | Databricks (measure compute) | Measure pins an outdated value-set version after the annual specification update, and a denominator exclusion no longer matches the approved specification | Versioned manifest comparison plus logic/AST comparison | Escalate: measure semantics |
+| `QI-LIN-001` | Cross-cutting | Required data-lineage record is missing | Run-to-source-to-output chain validation | Escalate: evidence cannot be invented |
+
+A value-set version update is escalated rather than auto-fixed. A new version changes which members fall into the numerator or denominator, so it alters measure population semantics (policy gate rule 2). The agent may attach a draft patch for the analyst to review.
 
 The missing-lineage finding may include a proposed record template, but the agent must never fabricate historical evidence.
+
+Optional fifth seed, if time allows: `QI-FEED-001`, a required supplemental clinical feed manifest missing for the current measurement period (Data Lake). It is escalated to data engineering because missing data cannot be auto-fixed.
 
 ## How it works
 
 ```mermaid
 flowchart LR
     A[Approved synthetic specification snapshot] --> C[Deterministic scanners]
-    B[Mock measure repository and run artifacts] --> C
+    B[Mock measure repository, Snowflake policy exports, and run artifacts] --> C
     C --> D[Codex analysis agent]
     D --> E{Policy gate}
     E -->|Low risk and high confidence| F[Patch, tests, and pull request]
@@ -89,40 +93,42 @@ qi-sentinel/
 |-- mock-platform/
 |   |-- measures/
 |   |-- pipelines/
+|   |-- snowflake/
 |   |-- logs/
 |   `-- lineage/
 |-- specs/
 |   `-- synthetic-2026/
-|-- src/
+|-- src/qi_sentinel/
 |   |-- agent/
 |   |-- evidence/
 |   |-- policy/
-|   `-- scanners/
+|   |-- scanners/
+|   `-- cli.py
 |-- tests/
 |   |-- fixtures/
 |   |-- integration/
 |   `-- unit/
 |-- artifacts/              # generated; do not commit sensitive content
 |-- .env.example
-|-- package.json
+|-- pyproject.toml
 `-- README.md
 ```
 
 ## Technology choices
 
-- TypeScript and Node.js for orchestration and deterministic scanners
-- [OpenAI Codex SDK](https://learn.chatgpt.com/docs/codex-sdk) for programmatic repository analysis and patch generation
+- Python 3.12 for orchestration and deterministic scanners
+- OpenAI Codex Python SDK (`openai-codex`, beta; version pinned) for programmatic repository analysis and patch generation, isolated behind `src/qi_sentinel/agent/` so SDK changes stay contained
 - YAML/JSON specification snapshots and policy configuration
 - SQLite or local JSON for hackathon run metadata
-- Vitest or Jest for unit and integration tests
+- pytest for unit and integration tests
 - GitHub Actions and [OpenAI's Codex Action](https://learn.chatgpt.com/docs/github-action) for the CI demonstration
 
 Docker is optional and is deliberately excluded from the minimum hackathon path.
 
 ## Prerequisites
 
-- Node.js 18 or later
-- npm
+- Python 3.12 or later (3.10 is the SDK minimum)
+- pip (or uv)
 - Git
 - Codex access for local interactive development
 - An OpenAI Platform project and API key for unattended GitHub Actions runs
@@ -137,7 +143,9 @@ No local GPU is required. A modern four-core CPU, 16 GB RAM, 20 GB of free SSD s
 ```bash
 git clone <repository-url>
 cd qi-sentinel
-npm install
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
 ```
 
 Create a local environment file:
@@ -157,16 +165,16 @@ Never commit `.env` or expose the key in browser code, logs, prompts, screenshot
 Seed and run the synthetic demonstration:
 
 ```bash
-npm run seed
-npm run sentinel:scan
-npm test
-npm run evidence:verify
+sentinel seed
+sentinel scan
+pytest
+sentinel verify
 ```
 
 Start the optional dashboard:
 
 ```bash
-npm run dev
+sentinel dashboard
 ```
 
 ## Expected demo result
@@ -218,6 +226,7 @@ Any pilot involving real PHI requires organizational privacy, security, legal, a
 
 - Detect all four seeded issues in one repeatable run.
 - Produce no false negatives against the seeded fixture set.
+- Produce no findings against the clean baseline fixtures.
 - Auto-fix exactly the two policy-approved findings.
 - Escalate both non-automatic findings with actionable root-cause analysis.
 - Pass regression tests after remediation.

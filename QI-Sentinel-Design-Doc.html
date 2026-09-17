@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QI Sentinel — PoC Design Document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f5f3ef; --card:#fbfaf7; --ink:#1f1d1a; --ink-2:#4a463f; --muted:#7a746a;
+  --rule:#dcd6cb; --rule-2:#e8e3da; --accent:#b4532f; --accent-soft:#f1dfd5;
+  --ok:#3d7550; --ok-soft:#dde9df; --warn:#9a6414; --warn-soft:#f1e5cf;
+  --crit:#a3372a; --crit-soft:#f2d9d4; --info:#35607f; --info-soft:#dbe5ec;
+  --code-bg:#efece6; --term-bg:#1d1b18; --term-ink:#e9e4da; --term-dim:#8f887c;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1b1a18; --card:#232120; --ink:#ece8e1; --ink-2:#c9c3b8; --muted:#968f83;
+    --rule:#3a3733; --rule-2:#2e2c29; --accent:#e08a66; --accent-soft:#3b2a22;
+    --ok:#7fb892; --ok-soft:#233328; --warn:#d9a65a; --warn-soft:#382d1c;
+    --crit:#e3887a; --crit-soft:#3d2420; --info:#8db4d1; --info-soft:#1f2c36;
+    --code-bg:#2a2825; --term-bg:#121110; --term-ink:#e9e4da; --term-dim:#8a8378;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1b1a18; --card:#232120; --ink:#ece8e1; --ink-2:#c9c3b8; --muted:#968f83;
+  --rule:#3a3733; --rule-2:#2e2c29; --accent:#e08a66; --accent-soft:#3b2a22;
+  --ok:#7fb892; --ok-soft:#233328; --warn:#d9a65a; --warn-soft:#382d1c;
+  --crit:#e3887a; --crit-soft:#3d2420; --info:#8db4d1; --info-soft:#1f2c36;
+  --code-bg:#2a2825; --term-bg:#121110; --term-ink:#e9e4da; --term-dim:#8a8378;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;font-feature-settings:"kern","liga"}
+img,svg{max-width:100%}
+a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+.page{max-width:900px;margin:0 auto;padding:56px 28px 96px}
+.prose{max-width:70ch}
+p{margin:0 0 1em}
+h1,h2,h3,h4{line-height:1.2;margin:0;font-weight:600;letter-spacing:-0.01em}
+code,pre,.mono{font-family:var(--mono)}
+:not(pre)>code{font-size:.88em;background:var(--code-bg);padding:.08em .35em;border-radius:3px}
+ul,ol{padding-left:1.3em;margin:0 0 1em}
+li{margin:.25em 0}
+strong{font-weight:600}
+
+/* cover */
+.cover{border-bottom:2px solid var(--ink);padding-bottom:36px;margin-bottom:40px}
+.docid{font-family:var(--mono);font-size:13px;color:var(--muted);margin-bottom:28px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.docid b{color:var(--accent);font-weight:500}
+.cover h1{font-size:clamp(40px,7vw,68px);font-weight:600;letter-spacing:-0.03em;line-height:1}
+.cover .sub{font-size:clamp(18px,2.4vw,22px);color:var(--ink-2);margin:16px 0 32px;max-width:40ch;line-height:1.35}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));border-top:1px solid var(--rule)}
+.meta div{padding:12px 16px 12px 0;border-bottom:1px solid var(--rule)}
+.meta dt{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.meta dd{margin:2px 0 0;font-size:15px}
+.tally{display:flex;gap:0;margin-top:28px;border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:var(--card)}
+.tally div{flex:1;padding:14px 16px;border-right:1px solid var(--rule)}
+.tally div:last-child{border-right:0}
+.tally .n{font-family:var(--mono);font-size:28px;font-weight:500;line-height:1}
+.tally .l{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* toc */
+.toc{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:20px 24px;margin-bottom:56px}
+.toc h2{font-size:15px;margin-bottom:10px}
+.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:32px}
+.toc li{margin:0;padding:4px 0;break-inside:avoid;font-size:15px}
+.toc a{color:var(--ink);text-decoration:none;display:flex;gap:10px}
+.toc a:hover{color:var(--accent)}
+.toc .num{font-family:var(--mono);color:var(--accent);min-width:2ch;font-size:14px}
+
+/* sections */
+section{margin:0 0 64px;scroll-margin-top:24px}
+.sh{display:grid;grid-template-columns:64px 1fr;align-items:baseline;border-top:1px solid var(--ink);padding-top:14px;margin-bottom:22px}
+.sh .num{font-family:var(--mono);font-size:15px;color:var(--accent);font-weight:500}
+.sh h2{font-size:28px}
+.sh .lede{grid-column:2;color:var(--muted);font-size:15px;margin-top:6px}
+.body{padding-left:64px}
+h3{font-size:19px;margin:32px 0 10px}
+h3 .mono{font-size:13px;color:var(--muted);font-weight:400;margin-left:8px}
+
+/* tables */
+.tw{overflow-x:auto;margin:0 0 20px;border:1px solid var(--rule);border-radius:4px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-weight:600;font-size:13px;color:var(--ink-2);background:var(--paper);border-bottom:1px solid var(--rule)}
+td.m,th.m{font-family:var(--mono);font-size:13px;white-space:nowrap}
+
+/* chips */
+.chip{display:inline-block;font-family:var(--mono);font-size:12px;padding:1px 7px;border-radius:3px;white-space:nowrap;font-weight:500}
+.c-auto{background:var(--ok-soft);color:var(--ok)}
+.c-pr{background:var(--info-soft);color:var(--info)}
+.c-esc{background:var(--warn-soft);color:var(--warn)}
+.c-crit{background:var(--crit-soft);color:var(--crit)}
+.c-acc{background:var(--accent-soft);color:var(--accent)}
+.c-mute{background:var(--rule-2);color:var(--ink-2)}
+
+/* cards */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:16px 18px;break-inside:avoid}
+.card .lab{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}
+.card h4{font-size:16px;margin-bottom:6px}
+.card p{font-size:14.5px;color:var(--ink-2);margin:0 0 .6em}
+.card p:last-child{margin:0}
+.callout{border-left:3px solid var(--accent);background:var(--card);padding:14px 18px;margin:0 0 20px;font-size:15px;border-radius:0 4px 4px 0}
+.callout b{font-weight:600}
+
+/* code */
+.code{margin:0 0 20px;border:1px solid var(--rule);border-radius:4px;background:var(--code-bg);break-inside:avoid}
+.code .cap{font-family:var(--mono);font-size:12px;color:var(--muted);padding:7px 14px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between}
+.code pre{margin:0;padding:14px;overflow-x:auto;font-size:13px;line-height:1.55;color:var(--ink)}
+.k{color:var(--accent)} .s{color:var(--ok)} .cm{color:var(--muted)} .n{color:var(--info)}
+
+/* ADR */
+.adr{background:var(--card);border:1px solid var(--rule);border-radius:4px;margin:0 0 16px;break-inside:avoid;overflow:hidden}
+.adr header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.adr header .id{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:500;margin-right:10px}
+.adr header h4{font-size:16px;display:inline}
+.adr table{font-size:14px}
+.adr th{width:150px;background:transparent;border-bottom:1px solid var(--rule-2);font-size:13px;color:var(--muted);font-weight:500}
+
+/* diagram */
+.fig{margin:0 0 24px;border:1px solid var(--rule);border-radius:4px;background:var(--card);padding:18px;break-inside:avoid}
+.fig figcaption{font-size:13px;color:var(--muted);margin-top:10px}
+.fig .scroll{overflow-x:auto}
+
+/* mocks */
+.mock{margin:0 0 28px;break-inside:avoid}
+.mock .mcap{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.mock .mcap h4{font-size:15px}
+.mock .mcap span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.term{background:var(--term-bg);color:var(--term-ink);border-radius:6px;overflow:hidden;border:1px solid #000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.term .bar{display:flex;align-items:center;gap:6px;padding:9px 12px;background:#2a2723;font-family:var(--mono);font-size:12px;color:var(--term-dim)}
+.term .bar i{width:10px;height:10px;border-radius:50%;background:#4a453e;display:inline-block}
+.term .bar em{font-style:normal;margin-left:8px}
+.term pre{margin:0;padding:16px 18px;font-size:12.5px;line-height:1.6;overflow-x:auto;color:var(--term-ink)}
+.t-dim{color:#8f887c}.t-ok{color:#8fc79f}.t-warn{color:#e3b56b}.t-crit{color:#ee8f80}.t-acc{color:#ec9c78}.t-info{color:#9cc2de}.t-b{font-weight:600;color:#fff}
+
+.win{background:var(--card);border:1px solid var(--rule);border-radius:6px;overflow:hidden;font-size:14px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.win .top{padding:14px 18px;border-bottom:1px solid var(--rule)}
+.win .top h5{font-size:18px;font-weight:600;margin:0 0 6px;line-height:1.3}
+.win .top h5 span{color:var(--muted);font-weight:400}
+.win .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.pill{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;color:#fff}
+.pill.open{background:#3d7550}.pill.draft{background:#6f6a61}.pill.issue{background:#9a6414}
+.win .cols{display:grid;grid-template-columns:1fr 200px}
+.win .main{padding:16px 18px;border-right:1px solid var(--rule-2);min-width:0}
+.win .side{padding:14px 16px;font-size:13px}
+.win .side dt{color:var(--muted);font-size:12px;margin-top:10px}
+.win .side dt:first-child{margin-top:0}
+.win .side dd{margin:2px 0 0}
+.win .main h6{font-size:14px;margin:14px 0 6px;font-weight:600}
+.win .main h6:first-child{margin-top:0}
+.win .main p,.win .main li{font-size:13.5px;color:var(--ink-2)}
+.diff{font-family:var(--mono);font-size:12px;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin:8px 0}
+.diff .fn{background:var(--paper);padding:6px 10px;border-bottom:1px solid var(--rule);color:var(--ink-2)}
+.diff div.l{padding:1px 10px;white-space:pre;overflow-x:auto}
+.diff .add{background:var(--ok-soft);color:var(--ok)}
+.diff .del{background:var(--crit-soft);color:var(--crit)}
+.checks{border:1px solid var(--rule);border-radius:4px;margin-top:12px}
+.checks div{display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--rule-2);font-size:13px}
+.checks div:last-child{border-bottom:0}
+.checks .okk{color:var(--ok);font-family:var(--mono);font-size:12px}
+.checks .pend{color:var(--warn);font-family:var(--mono);font-size:12px}
+
+.report{background:#fdfcfa;color:#1f1d1a;border:1px solid var(--rule);border-radius:6px;padding:26px 28px;font-size:13.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.report h5{font-size:20px;margin:0 0 4px}
+.report .rm{font-family:var(--mono);font-size:11.5px;color:#7a746a;margin-bottom:16px}
+.report .kp{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #dcd6cb;border-radius:4px;margin-bottom:16px}
+.report .kp div{padding:10px 12px;border-right:1px solid #dcd6cb}
+.report .kp div:last-child{border-right:0}
+.report .kp b{display:block;font-family:var(--mono);font-size:20px;font-weight:500}
+.report .kp span{font-size:12px;color:#7a746a}
+.report table{font-size:12.5px}
+.report th{background:#f5f3ef;color:#4a463f}
+.report td,.report th{padding:7px 9px;border-bottom:1px solid #e8e3da}
+.report .hash{font-family:var(--mono);font-size:11px;color:#7a746a;word-break:break-all}
+
+.dash{background:var(--card);border:1px solid var(--rule);border-radius:6px;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.dash .dt{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--rule);gap:10px;flex-wrap:wrap}
+.dash .dt b{font-size:15px}
+.dash .dt span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.dash .layers{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--rule)}
+.dash .layer{padding:14px 16px;border-right:1px solid var(--rule-2)}
+.dash .layer:last-child{border-right:0}
+.dash .layer .ln{font-size:13px;color:var(--muted)}
+.dash .layer .st{font-size:15px;font-weight:600;margin-top:4px;display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.dash .spark{display:flex;align-items:flex-end;gap:3px;height:34px;margin-top:10px}
+.dash .spark i{flex:1;background:var(--rule);border-radius:1px}
+.dash .spark i.hit{background:var(--accent)}
+.stretch{font-family:var(--mono);font-size:12px;color:var(--accent);border:1px dashed var(--accent);padding:1px 7px;border-radius:3px}
+
+/* phases */
+.phases{list-style:none;padding:0;margin:0 0 20px;border-left:2px solid var(--rule)}
+.phases li{position:relative;padding:0 0 18px 24px;margin:0}
+.phases li::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--accent)}
+.phases .pn{font-family:var(--mono);font-size:12px;color:var(--accent)}
+.phases h4{font-size:16px;margin:2px 0 4px}
+.phases p{font-size:14.5px;color:var(--ink-2);margin:0}
+.phases .exit{font-size:13px;color:var(--muted);margin-top:4px}
+
+.foot{border-top:2px solid var(--ink);padding-top:16px;margin-top:40px;font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+@media (max-width:720px){
+  .page{padding:36px 18px 72px}
+  .body{padding-left:0}
+  .sh{grid-template-columns:48px 1fr}
+  .sh h2{font-size:23px}
+  .toc ol{columns:1}
+  .win .cols{grid-template-columns:1fr}
+  .win .main{border-right:0;border-bottom:1px solid var(--rule-2)}
+  .dash .layers,.report .kp{grid-template-columns:repeat(2,1fr)}
+  .tally{flex-wrap:wrap}
+  .tally div{flex:1 1 45%;border-bottom:1px solid var(--rule)}
+}
+@media print{
+  @page{size:A4;margin:16mm 14mm 18mm}
+  :root{--paper:#ffffff;--card:#ffffff}
+  body{font-size:10.5pt;background:#fff}
+  .page{max-width:none;padding:0}
+  .toc{break-after:page}
+  section{margin-bottom:28px}
+  .sh{break-after:avoid}
+  h3{break-after:avoid}
+  .tw,.code,.fig,.mock,.adr,.card,.phases li{break-inside:avoid}
+  .tw,.code pre,.term pre,.fig .scroll{overflow:visible}
+  .code pre,.term pre{white-space:pre-wrap;word-break:break-word}
+  a{color:inherit;text-decoration:none}
+  #s10,#s11,#s16{break-before:page}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main class="page">
+
+<header class="cover">
+  <div class="docid"><span><b>QIS-DD-001</b> PoC design document</span><span>v3.0 · Python</span></div>
+  <h1>QI Sentinel</h1>
+  <p class="sub">A continuous compliance agent that keeps quality-measure logic, value sets, and data pipelines audit-ready between submissions.</p>
+  <dl class="meta">
+    <div><dt>Author</dt><dd>Sundara Mahalingam Andavar</dd></div>
+    <div><dt>Date</dt><dd>17 September 2026</dd></div>
+    <div><dt>Event</dt><dd>Internal hackathon, OpenAI Codex</dd></div>
+    <div><dt>Repository</dt><dd>vzsundara/QICentinel_OpenAI</dd></div>
+    <div><dt>Stack</dt><dd>Python, Codex Python SDK, Codex Action</dd></div>
+    <div><dt>Data</dt><dd>Synthetic only, control plane only</dd></div>
+  </dl>
+  <div class="tally" aria-label="Demo cycle outcome">
+    <div><div class="n">4</div><div class="l">seeded defects</div></div>
+    <div><div class="n">4</div><div class="l">findings</div></div>
+    <div><div class="n" style="color:var(--ok)">2</div><div class="l">auto-remediated</div></div>
+    <div><div class="n" style="color:var(--warn)">2</div><div class="l">escalated</div></div>
+    <div><div class="n">0</div><div class="l">auto-merges</div></div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1"><span class="num">1</span>Summary</a></li>
+    <li><a href="#s2"><span class="num">2</span>Problem and context</a></li>
+    <li><a href="#s3"><span class="num">3</span>Goals, scope, success criteria</a></li>
+    <li><a href="#s4"><span class="num">4</span>Architecture</a></li>
+    <li><a href="#s5"><span class="num">5</span>Mock platform and seeded defects</a></li>
+    <li><a href="#s6"><span class="num">6</span>Detection</a></li>
+    <li><a href="#s7"><span class="num">7</span>Policy gate</a></li>
+    <li><a href="#s8"><span class="num">8</span>Actions and CI workflow</a></li>
+    <li><a href="#s9"><span class="num">9</span>Evidence pack</a></li>
+    <li><a href="#s10"><span class="num">10</span>Interface mocks</a></li>
+    <li><a href="#s11"><span class="num">11</span>Architecture decisions</a></li>
+    <li><a href="#s12"><span class="num">12</span>Safety and controls</a></li>
+    <li><a href="#s13"><span class="num">13</span>Build plan and demo</a></li>
+    <li><a href="#s14"><span class="num">14</span>Risks</a></li>
+    <li><a href="#s15"><span class="num">15</span>Assumptions and open questions</a></li>
+    <li><a href="#s16"><span class="num">16</span>Publishing and roadmap</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+  <div class="sh"><span class="num">§1</span><h2>Summary</h2></div>
+  <div class="body prose">
+    <p>Quality-measure reporting depends on measure logic, value sets, and pipelines that change all year. Assurance that they still match the approved specification and governance policy happens mostly at submission time, so drift is found when a rate moves and audit evidence is rebuilt after the fact.</p>
+    <p><strong>QI Sentinel</strong> treats measure integrity as a continuously monitored property of the platform. Deterministic scanners inspect measure logic, value-set references, Snowflake policy exports, logs, and lineage. Codex analyses what the scanners find, writes root-cause analysis and patches, and narrates evidence. A deterministic policy gate decides what happens: low-risk fixes go into a reviewable pull request, and anything touching measure meaning or requiring attestation goes to a human with the analysis already done.</p>
+    <p>The PoC proves this with one cycle against a synthetic platform seeded with four defects: find four, remediate two, escalate two, produce one evidence pack. It runs locally and from GitHub Actions.</p>
+  </div>
+</section>
+
+<section id="s2">
+  <div class="sh"><span class="num">§2</span><h2>Problem and context</h2><p class="lede">Why compliance is the right hackathon theme for healthcare quality.</p></div>
+  <div class="body">
+    <div class="grid2">
+      <div class="card"><div class="lab"><span>Pain owner</span></div><h4>Clear and accountable</h4><p>Compliance, Security, and Quality Analytics each own a slice of measure integrity and each feels audit season.</p></div>
+      <div class="card"><div class="lab"><span>Cost of status quo</span></div><h4>Already quantified</h4><p>Audit-prep effort, remediation after submission, and quality-bonus and Star Rating exposure when a rate is wrong.</p></div>
+      <div class="card"><div class="lab"><span>Tool fit</span></div><h4>Codex-native</h4><p>Reading repos, reasoning about code against a spec, and authoring PRs from CI are what Codex does well.</p></div>
+      <div class="card"><div class="lab"><span>Failure today</span></div><h4>Late, manual, reconstructed</h4><p>Analysts re-verify unchanged logic instead of closing gaps in care, and evidence is assembled weeks after the change that caused it.</p></div>
+    </div>
+    <h3>What the agent watches <span class="mono">control plane only</span></h3>
+    <div class="tw"><table>
+      <thead><tr><th>Layer</th><th>Signals</th><th>PoC seed</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Databricks</strong><br><span class="chip c-mute">measure compute</span></td><td>Measure logic, value-set version pins, exclusions vs. spec</td><td><code>QI-SEM-001</code></td></tr>
+        <tr><td><strong>Snowflake</strong><br><span class="chip c-mute">reporting</span></td><td>Masking and row-access policies, role grants</td><td><code>QI-MASK-001</code></td></tr>
+        <tr><td><strong>Cross-cutting</strong></td><td>Sensitive fields in logs; run → source → output lineage</td><td><code>QI-LOG-001</code>, <code>QI-LIN-001</code></td></tr>
+        <tr><td><strong>Data Lake</strong><br><span class="chip c-mute">landing zone</span></td><td>Feed completeness per measurement period, schema drift</td><td><code>QI-FEED-001</code> <span class="chip c-mute">optional</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="s3">
+  <div class="sh"><span class="num">§3</span><h2>Goals, scope, success criteria</h2></div>
+  <div class="body">
+    <div class="callout"><b>PoC goal.</b> One monitoring cycle finds all four seeded defects, remediates the two the policy allows in a single reviewable PR, escalates the other two with analyst-ready RCA, and produces a verifiable evidence pack. Switching the gate to observe mode shows the same cycle deferring every change to humans.</div>
+    <div class="grid2">
+      <div class="card"><div class="lab"><span>In scope</span><span class="chip c-auto">build</span></div>
+        <ul style="margin:0;font-size:14.5px;color:var(--ink-2)">
+          <li>Mock platform, synthetic spec snapshot, clean baseline</li>
+          <li>Four scanners, Codex agent, policy gate</li>
+          <li>PR and escalation records, evidence pack + verify</li>
+          <li>GitHub Actions workflow with the Codex Action</li>
+          <li>Recorded run and 5-minute demo script</li>
+        </ul></div>
+      <div class="card"><div class="lab"><span>Out of scope</span><span class="chip c-mute">not now</span></div>
+        <ul style="margin:0;font-size:14.5px;color:var(--ink-2)">
+          <li>Real PHI, licensed HEDIS/CMS spec content</li>
+          <li>Production connectivity or deployment</li>
+          <li>Clinical decision logic, full HEDIS engine</li>
+          <li>Multi-tenancy, Docker</li>
+          <li>Dashboard (stretch goal)</li>
+        </ul></div>
+    </div>
+    <h3>Success criteria</h3>
+    <div class="tw"><table>
+      <thead><tr><th class="m">ID</th><th>Criterion</th><th>Target</th><th>Measured by</th></tr></thead>
+      <tbody>
+        <tr><td class="m">S1</td><td>Seeded defects detected in one repeatable run</td><td>4 / 4</td><td>Findings vs. <code>tests/fixtures/seeds.json</code></td></tr>
+        <tr><td class="m">S2</td><td>Findings on clean baseline fixtures</td><td>0</td><td>Integration test on baseline</td></tr>
+        <tr><td class="m">S3</td><td>Auto-remediated findings</td><td>Exactly 2</td><td>Evidence pack dispositions</td></tr>
+        <tr><td class="m">S4</td><td>Escalations with RCA, impact, evidence, next action</td><td>2 / 2</td><td>Escalation schema validation</td></tr>
+        <tr><td class="m">S5</td><td>Regression tests after remediation</td><td>Pass</td><td><code>pytest</code> on the fix branch</td></tr>
+        <tr><td class="m">S6</td><td>Evidence integrity</td><td>Pass</td><td><code>sentinel verify</code></td></tr>
+        <tr><td class="m">S7</td><td>Keys or synthetic sensitive fields in published output</td><td>None</td><td>Pre-publication scan</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="s4">
+  <div class="sh"><span class="num">§4</span><h2>Architecture</h2><p class="lede">Deterministic code owns every decision. Codex owns reasoning and writing.</p></div>
+  <div class="body">
+    <figure class="fig">
+      <div class="scroll">
+      <svg viewBox="0 0 800 300" role="img" aria-labelledby="loopT" style="min-width:640px;display:block;font-family:var(--sans)">
+        <title id="loopT">QI Sentinel loop: collect, scan, analyse, policy gate, act, evidence</title>
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+        <rect x="10" y="20" width="150" height="176" rx="4" style="fill:var(--paper);stroke:var(--rule)"/>
+        <text x="24" y="44" style="font-size:13px;font-weight:600;fill:var(--ink)">Inputs</text>
+        <g style="font-family:var(--mono);font-size:11px;fill:var(--ink-2)">
+          <text x="24" y="70">mock-platform/</text><text x="24" y="90">  measures/</text><text x="24" y="110">  snowflake/ logs/</text>
+          <text x="24" y="130">  lineage/ …</text><text x="24" y="150">specs/</text><text x="24" y="176" style="fill:var(--accent)">config/policy.yml</text>
+        </g>
+        <line x1="160" y1="80" x2="196" y2="80" style="stroke:var(--muted);stroke-width:1.5" marker-end="url(#ar)"/>
+        <g style="font-size:13px">
+          <rect x="200" y="50" width="120" height="60" rx="4" style="fill:var(--card);stroke:var(--ink)"/>
+          <text x="214" y="72" style="font-family:var(--mono);font-size:11px;fill:var(--accent)">1</text><text x="214" y="92" style="font-weight:600;fill:var(--ink)">Collect</text>
+          <rect x="350" y="50" width="120" height="60" rx="4" style="fill:var(--card);stroke:var(--ink)"/>
+          <text x="364" y="72" style="font-family:var(--mono);font-size:11px;fill:var(--accent)">2</text><text x="364" y="92" style="font-weight:600;fill:var(--ink)">Scan</text>
+          <rect x="500" y="50" width="120" height="60" rx="4" style="fill:var(--info-soft);stroke:var(--info)"/>
+          <text x="514" y="72" style="font-family:var(--mono);font-size:11px;fill:var(--info)">3 · Codex</text><text x="514" y="92" style="font-weight:600;fill:var(--ink)">Analyse</text>
+          <rect x="650" y="50" width="130" height="60" rx="4" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5"/>
+          <text x="664" y="72" style="font-family:var(--mono);font-size:11px;fill:var(--accent)">4</text><text x="664" y="92" style="font-weight:600;fill:var(--ink)">Policy gate</text>
+          <rect x="500" y="190" width="120" height="60" rx="4" style="fill:var(--card);stroke:var(--ink)"/>
+          <text x="514" y="212" style="font-family:var(--mono);font-size:11px;fill:var(--accent)">5</text><text x="514" y="232" style="font-weight:600;fill:var(--ink)">Act</text>
+          <rect x="336" y="190" width="140" height="60" rx="4" style="fill:var(--card);stroke:var(--ink)"/>
+          <text x="350" y="212" style="font-family:var(--mono);font-size:11px;fill:var(--accent)">6</text><text x="350" y="232" style="font-weight:600;fill:var(--ink)">Evidence pack</text>
+        </g>
+        <g style="stroke:var(--muted);stroke-width:1.5;fill:none">
+          <line x1="320" y1="80" x2="346" y2="80" marker-end="url(#ar)"/>
+          <line x1="470" y1="80" x2="496" y2="80" marker-end="url(#ar)"/>
+          <line x1="620" y1="80" x2="646" y2="80" marker-end="url(#ar)"/>
+          <path d="M768,110 L768,220 L624,220" marker-end="url(#ar)"/>
+          <line x1="500" y1="220" x2="480" y2="220" marker-end="url(#ar)"/>
+          <line x1="336" y1="220" x2="200" y2="220" marker-end="url(#ar)"/>
+        </g>
+        <g style="font-size:11px;fill:var(--muted)">
+          <text x="200" y="130">hash inputs + spec</text>
+          <text x="350" y="130">4 Python scanners</text>
+          <text x="500" y="130">RCA · patches</text>
+          <text x="640" y="130">enforce | observe</text>
+          <text x="500" y="270">1 PR · 2 escalations</text>
+          <text x="336" y="270">json + html, sha256</text>
+        </g>
+        <text x="24" y="224" style="font-size:13px;font-weight:600;fill:var(--ink)">Humans</text>
+        <text x="24" y="244" style="font-size:12px;fill:var(--ink-2)">review the PR, own escalations,</text>
+        <text x="24" y="260" style="font-size:12px;fill:var(--ink-2)">change policy.yml</text>
+      </svg>
+      </div>
+      <figcaption>Figure 1. Monitoring cycle. The same code runs from <code>sentinel scan</code> locally and from the GitHub Actions workflow.</figcaption>
+    </figure>
+    <div class="tw"><table>
+      <thead><tr><th class="m">Stage</th><th>Owner</th><th>Responsibility</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td class="m">1 collect</td><td>Code</td><td>Load mock platform and spec snapshot, redact log samples, SHA-256 every input</td><td><code>snapshot.json</code></td></tr>
+        <tr><td class="m">2 scan</td><td>Code</td><td>Run four scanners; assign rule ID, severity, confidence</td><td>Raw findings</td></tr>
+        <tr><td class="m">3 analyse</td><td>Codex</td><td>Spec-vs-logic comparison for semantic findings; RCA, patches, plain-language explanation</td><td>Enriched findings</td></tr>
+        <tr><td class="m">4 gate</td><td>Code</td><td>Apply the six gate conditions from <code>config/policy.yml</code></td><td>Disposition per finding</td></tr>
+        <tr><td class="m">5 act</td><td>Code + Codex</td><td>Branch, apply allowed patches, run tests, open one PR; write escalation records</td><td>PR, escalations</td></tr>
+        <tr><td class="m">6 evidence</td><td>Code</td><td>Assemble and hash the pack; Codex narrates, code signs off</td><td><code>artifacts/&lt;run-id&gt;/</code></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="s5">
+  <div class="sh"><span class="num">§5</span><h2>Mock platform and seeded defects</h2><p class="lede">Repository layout from the README, with Snowflake policy exports added.</p></div>
+  <div class="body">
+    <div class="code"><div class="cap"><span>QICentinel_OpenAI/</span><span>repo layout</span></div>
+<pre>qi-sentinel/
+├── .github/
+│   ├── workflows/qi-sentinel.yml
+│   └── codex/prompts/monitor.md
+├── config/
+│   ├── policy.yml                  <span class="cm"># gate rules, allowlist, hard floor</span>
+│   └── sentinel.yml
+├── mock-platform/
+│   ├── measures/cbp/cbp_rate.sql   <span class="cm"># QI-SEM-001: stale value set + exclusion drift</span>
+│   ├── pipelines/logging.yml       <span class="cm"># QI-LOG-001 fix target</span>
+│   ├── snowflake/                  <span class="cm"># QI-MASK-001: policy DDL + INFORMATION_SCHEMA-style JSON</span>
+│   ├── logs/measure-runner.log     <span class="cm"># QI-LOG-001: synthetic member identifiers</span>
+│   └── lineage/measures.json       <span class="cm"># QI-LIN-001: no record for COL</span>
+├── specs/synthetic-2026/           <span class="cm"># synthetic spec + value-set manifest, checksummed</span>
+├── src/qi_sentinel/ agent/ evidence/ policy/ scanners/ cli.py
+├── tests/ fixtures/ integration/ unit/
+├── artifacts/                      <span class="cm"># generated; never commit sensitive content</span>
+├── .env.example
+└── pyproject.toml</pre></div>
+
+    <div class="grid2">
+      <div class="card"><div class="lab"><span>QI-MASK-001 · Snowflake</span><span class="chip c-auto">auto-fix</span></div>
+        <h4>Masking policy removed</h4><p><code>PHI_MASK_DOB</code> is no longer attached to PHI-tagged <code>RPT.MEMBER_MEASURE.DOB</code>. The fix restores the last approved policy: no semantic change, fully testable.</p></div>
+      <div class="card"><div class="lab"><span>QI-LOG-001 · Cross-cutting</span><span class="chip c-auto">auto-fix</span></div>
+        <h4>Member identifiers in logs</h4><p>Synthetic MRN and DOB fields appear in <code>measure-runner.log</code>. The fix adds a redaction filter to <code>pipelines/logging.yml</code>.</p></div>
+      <div class="card"><div class="lab"><span>QI-SEM-001 · Databricks</span><span class="chip c-esc">escalate</span></div>
+        <h4>Measure drift from spec</h4><p><code>cbp_rate.sql</code> pins <code>VS_HYPERTENSION@2025</code> while the manifest says <code>2026</code>, and excludes hospice but not palliative care. Both change who is in the population, so both go to Quality Analytics.</p></div>
+      <div class="card"><div class="lab"><span>QI-LIN-001 · Cross-cutting</span><span class="chip c-esc">escalate</span></div>
+        <h4>Lineage record missing</h4><p>No run → source → output record for measure <code>COL</code>. The agent may draft a template, but evidence cannot be invented, so the data owner must attest.</p></div>
+    </div>
+    <p class="prose"><strong>Optional fifth seed.</strong> <code>QI-FEED-001</code>: supplemental clinical feed manifest missing for the current period in the Data Lake. Escalated to data engineering, because missing data cannot be auto-fixed.</p>
+  </div>
+</section>
+
+<section id="s6">
+  <div class="sh"><span class="num">§6</span><h2>Detection</h2><p class="lede">Scanners are plain Python and fully reproducible. Codex is called only where reading comprehension is needed.</p></div>
+  <div class="body">
+    <div class="tw"><table>
+      <thead><tr><th class="m">Rule</th><th>Check</th><th>Method</th><th class="m">auto_fix_allowed</th></tr></thead>
+      <tbody>
+        <tr><td class="m">QI-MASK-001</td><td>Every PHI-tagged column has a masking policy reference</td><td><span class="chip c-mute">scanner</span></td><td class="m">true</td></tr>
+        <tr><td class="m">QI-LOG-001</td><td>No sensitive key/value pairs in structured logs</td><td><span class="chip c-mute">scanner</span></td><td class="m">true</td></tr>
+        <tr><td class="m">QI-SEM-001</td><td>Value-set pins match manifest; exclusions match spec text</td><td><span class="chip c-mute">scanner</span> + <span class="chip c-pr">Codex</span></td><td class="m">false</td></tr>
+        <tr><td class="m">QI-LIN-001</td><td>Every active measure has a complete lineage chain</td><td><span class="chip c-mute">scanner</span></td><td class="m">false</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Scanner shape</h3>
+    <div class="code"><div class="cap"><span>src/qi_sentinel/scanners/masking_policy.py</span><span>python</span></div>
+<pre><span class="k">@scanner</span>(rule_id=<span class="s">"QI-MASK-001"</span>, layer=<span class="s">"snowflake"</span>)
+<span class="k">def</span> <span class="n">masking_policy</span>(ctx: Context) -&gt; list[Finding]:
+    tagged = ctx.catalog.columns(tag=<span class="s">"phi"</span>)
+    refs = ctx.snowflake.masking_policy_refs()   <span class="cm"># {column_fqn: policy_name}</span>
+    <span class="k">return</span> [
+        Finding(
+            rule_id=<span class="s">"QI-MASK-001"</span>, severity=<span class="s">"critical"</span>, confidence=<span class="n">1.0</span>,
+            target=col.fqn,
+            expected=col.approved_policy,        <span class="cm"># from the last approved snapshot</span>
+            observed=<span class="n">None</span>,
+            evidence=[ctx.artifact(<span class="s">"mock-platform/lineage/catalog_tags.json"</span>),
+                      ctx.artifact(<span class="s">"mock-platform/snowflake/policy_references.json"</span>)],
+        )
+        <span class="k">for</span> col <span class="k">in</span> tagged
+        <span class="k">if</span> col.fqn <span class="k">not in</span> refs
+    ]</pre></div>
+
+    <div class="code"><div class="cap"><span>src/qi_sentinel/scanners/sensitive_log.py</span><span>python</span></div>
+<pre><span class="cm"># Key/value patterns only. A bare date pattern would flag every log timestamp.</span>
+SENSITIVE_FIELDS: dict[str, re.Pattern[str]] = {
+    <span class="s">"mrn"</span>: re.compile(<span class="s">r"\bmrn[=:]\s*MRN-?\d{8}\b"</span>, re.I),
+    <span class="s">"dob"</span>: re.compile(<span class="s">r"\b(dob|birth_date)[=:]\s*\d{4}-\d{2}-\d{2}\b"</span>, re.I),
+}</pre></div>
+
+    <h3>Codex analysis contract <span class="mono">QI-SEM-001</span></h3>
+    <p class="prose">A thin wrapper in <code>src/qi_sentinel/agent/</code>, the only module that imports the pinned beta <code>openai-codex</code> SDK, sends the measure file, the relevant spec section, and the value-set manifest entry to Codex with the prompt in <code>.github/codex/prompts/monitor.md</code>. The response must validate against this schema. If it fails validation, it becomes an <code>analysis-error</code> escalation rather than being dropped.</p>
+    <div class="code"><div class="cap"><span>src/qi_sentinel/agent/codex_client.py</span><span>python</span></div>
+<pre><span class="k">from</span> openai_codex <span class="k">import</span> Codex   <span class="cm"># openai-codex, exact version pinned in pyproject.toml</span>
+
+<span class="k">def</span> <span class="n">analyse_semantic</span>(prompt: str) -&gt; SemanticAnalysis:
+    <span class="k">with</span> Codex() <span class="k">as</span> codex:
+        thread = codex.thread_start()
+        result = thread.run(prompt)
+    <span class="cm"># schema failure raises, and the caller records an analysis-error escalation</span>
+    <span class="k">return</span> SemanticAnalysis.model_validate_json(result.final_response)</pre></div>
+<div class="code"><div class="cap"><span>QI-SEM-001 analysis output</span><span>json</span></div>
+<pre>{
+  <span class="n">"ruleId"</span>: <span class="s">"QI-SEM-001"</span>,
+  <span class="n">"measure"</span>: <span class="s">"CBP"</span>,
+  <span class="n">"specRef"</span>: <span class="s">"specs/synthetic-2026/cbp.yml#denominator.exclusions"</span>,
+  <span class="n">"divergences"</span>: [
+    { <span class="n">"type"</span>: <span class="s">"stale_value_set"</span>, <span class="n">"expected"</span>: <span class="s">"VS_HYPERTENSION@2026"</span>, <span class="n">"observed"</span>: <span class="s">"@2025"</span> },
+    { <span class="n">"type"</span>: <span class="s">"missing_exclusion"</span>, <span class="n">"expected"</span>: <span class="s">"hospice OR palliative care"</span>, <span class="n">"observed"</span>: <span class="s">"hospice only"</span> }
+  ],
+  <span class="n">"rootCause"</span>: <span class="s">"Measure written against 2025 spec; 2026 snapshot added without logic update"</span>,
+  <span class="n">"impact"</span>: <span class="s">"Denominator overstated; rate likely understated"</span>,
+  <span class="n">"recommendedAction"</span>: <span class="s">"Analyst review of draft patch; confirm population change"</span>,
+  <span class="n">"confidence"</span>: <span class="n">0.86</span>
+}</pre></div>
+  </div>
+</section>
+
+<section id="s7">
+  <div class="sh"><span class="num">§7</span><h2>Policy gate</h2><p class="lede">Six conditions, all required. Evaluated in code, never by the model.</p></div>
+  <div class="body">
+    <div class="tw"><table>
+      <thead><tr><th class="m">#</th><th>Auto-remediation is allowed only when</th><th>QI-MASK-001</th><th>QI-LOG-001</th><th>QI-SEM-001</th><th>QI-LIN-001</th></tr></thead>
+      <tbody>
+        <tr><td class="m">1</td><td>Rule has <code>auto_fix_allowed: true</code></td><td>✓</td><td>✓</td><td>✗</td><td>✗</td></tr>
+        <tr><td class="m">2</td><td>Change does not alter measure population semantics</td><td>✓</td><td>✓</td><td>✗</td><td>n/a</td></tr>
+        <tr><td class="m">3</td><td>Confidence meets threshold</td><td>1.00</td><td>0.99</td><td>0.86</td><td>1.00</td></tr>
+        <tr><td class="m">4</td><td>Change limited to allowlisted files and commands</td><td>✓</td><td>✓</td><td>n/a</td><td>n/a</td></tr>
+        <tr><td class="m">5</td><td>Unit, policy, regression, evidence-integrity tests pass</td><td>✓</td><td>✓</td><td>n/a</td><td>n/a</td></tr>
+        <tr><td class="m">6</td><td>Submitted for review, not merged</td><td>✓</td><td>✓</td><td>n/a</td><td>n/a</td></tr>
+        <tr><td></td><td><strong>Disposition</strong></td><td><span class="chip c-auto">auto-fix</span></td><td><span class="chip c-auto">auto-fix</span></td><td><span class="chip c-esc">escalate</span></td><td><span class="chip c-esc">escalate</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="code"><div class="cap"><span>config/policy.yml</span><span>yaml</span></div>
+<pre><span class="n">version</span>: 3
+<span class="n">mode</span>: enforce                   <span class="cm"># enforce | observe  (demo flips this)</span>
+<span class="n">confidence_threshold</span>: 0.95
+
+<span class="n">rules</span>:
+  <span class="n">QI-MASK-001</span>: { auto_fix_allowed: true,  category: phi-protection }
+  <span class="n">QI-LOG-001</span>:  { auto_fix_allowed: true,  category: phi-protection }
+  <span class="n">QI-SEM-001</span>:  { auto_fix_allowed: false, category: measure-semantics,    route: quality-analytics }
+  <span class="n">QI-LIN-001</span>:  { auto_fix_allowed: false, category: evidence-attestation, route: data-governance }
+
+<span class="n">allowlist</span>:
+  <span class="n">files</span>:
+    - mock-platform/snowflake/policies/**
+    - mock-platform/pipelines/logging.yml
+  <span class="n">commands</span>: [<span class="s">"pytest"</span>, <span class="s">"sentinel verify"</span>]
+
+<span class="n">never_auto_apply</span>:             <span class="cm"># hard floor; rule config cannot override</span>
+  - measure-semantics
+  - evidence-attestation
+  - access-grant-widening
+
+<span class="n">pull_requests</span>:
+  <span class="n">merge</span>: never</pre></div>
+    <div class="callout"><b>Gate flip in the demo.</b> Setting <code>mode: observe</code> and re-running produces the same four findings and analysis, but no branch or PR. Both fixes appear in the evidence pack as proposed patches marked "held: observe mode". This is also the mode the pilot starts in.</div>
+  </div>
+</section>
+
+<section id="s8">
+  <div class="sh"><span class="num">§8</span><h2>Actions and CI workflow</h2></div>
+  <div class="body">
+    <div class="tw"><table>
+      <thead><tr><th class="m">Finding</th><th>Action</th><th>Change</th><th>Proof</th></tr></thead>
+      <tbody>
+        <tr><td class="m">QI-MASK-001</td><td>PR #12 <span class="chip c-auto">commit 1</span></td><td>Re-attach <code>GOV.PHI_MASK_DOB</code> in policy DDL and export</td><td>Scanner re-run: 0 findings</td></tr>
+        <tr><td class="m">QI-LOG-001</td><td>PR #12 <span class="chip c-auto">commit 2</span></td><td>Redaction filter in <code>logging.yml</code>; affected sample sanitized</td><td>Scanner re-run + filter unit test</td></tr>
+        <tr><td class="m">QI-SEM-001</td><td>Escalation #13 <span class="chip c-esc">quality-analytics</span></td><td>RCA with draft patch attached, not applied</td><td>Analyst decision</td></tr>
+        <tr><td class="m">QI-LIN-001</td><td>Escalation #14 <span class="chip c-esc">data-governance</span></td><td>Proposed record template, clearly marked unattested</td><td>Owner attestation</td></tr>
+      </tbody>
+    </table></div>
+    <div class="code"><div class="cap"><span>PR #12, commit 1</span><span>sql</span></div>
+<pre><span class="k">ALTER TABLE</span> RPT.MEMBER_MEASURE
+  <span class="k">MODIFY COLUMN</span> DOB
+  <span class="k">SET MASKING POLICY</span> GOV.PHI_MASK_DOB;</pre></div>
+
+    <h3>Workflow <span class="mono">scan and remediate are separate jobs</span></h3>
+    <div class="code"><div class="cap"><span>.github/workflows/qi-sentinel.yml</span><span>yaml, abridged</span></div>
+<pre><span class="n">on</span>:
+  <span class="n">schedule</span>: [{ cron: <span class="s">"0 * * * *"</span> }]
+  <span class="n">workflow_dispatch</span>: {}           <span class="cm"># trusted triggers only; no pull_request_target</span>
+
+<span class="n">jobs</span>:
+  <span class="n">scan</span>:
+    <span class="n">runs-on</span>: ubuntu-latest
+    <span class="n">permissions</span>: { contents: read }
+    <span class="n">steps</span>:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: <span class="s">"3.12"</span> }
+      - run: pip install -e .
+      - run: sentinel scan --no-remediate
+        env: { OPENAI_API_KEY: <span class="s">${{ secrets.OPENAI_API_KEY }}</span> }
+      - uses: actions/upload-artifact@v4
+        with: { name: evidence, path: artifacts/ }
+
+  <span class="n">remediate</span>:
+    <span class="n">needs</span>: scan
+    <span class="n">if</span>: github.repository == 'vzsundara/QICentinel_OpenAI'
+    <span class="n">runs-on</span>: ubuntu-latest
+    <span class="n">permissions</span>: { contents: write, pull-requests: write }
+    <span class="n">steps</span>:
+      <span class="cm"># checkout, setup, then the Codex Action step with the narrowest sandbox,</span>
+      <span class="cm"># pinned to a commit SHA; confirm inputs against the Codex GitHub Action docs</span>
+      - run: sentinel remediate
+      - run: pytest &amp;&amp; sentinel verify</pre></div>
+    <p class="prose"><strong>Idempotency.</strong> Each finding has a fingerprint (<code>ruleId + target + expected</code>) written into PR and escalation bodies. Before creating anything, the agent looks for an open record with that fingerprint and updates it instead.</p>
+  </div>
+</section>
+
+<section id="s9">
+  <div class="sh"><span class="num">§9</span><h2>Evidence pack</h2><p class="lede">Generated at detection time, not reconstructed at audit time.</p></div>
+  <div class="body">
+    <div class="code"><div class="cap"><span>artifacts/run-20260917-1402/evidence.json</span><span>excerpt</span></div>
+<pre>{
+  <span class="n">"runId"</span>: <span class="s">"run-20260917-1402"</span>,
+  <span class="n">"startedAt"</span>: <span class="s">"2026-09-17T14:02:11Z"</span>,
+  <span class="n">"repoCommit"</span>: <span class="s">"81f812b"</span>,
+  <span class="n">"runtime"</span>: { <span class="n">"sentinel"</span>: <span class="s">"0.1.0"</span>, <span class="n">"python"</span>: <span class="s">"3.12"</span>, <span class="n">"openai-codex"</span>: <span class="s">"pinned"</span>, <span class="n">"prompt"</span>: <span class="s">"monitor.md@sha256:e07d…11b4"</span> },
+  <span class="n">"spec"</span>: { <span class="n">"id"</span>: <span class="s">"synthetic-2026"</span>, <span class="n">"effective"</span>: <span class="s">"2026-01-01"</span>, <span class="n">"sha256"</span>: <span class="s">"3d18…9b20"</span> },
+  <span class="n">"policy"</span>: { <span class="n">"version"</span>: 3, <span class="n">"mode"</span>: <span class="s">"enforce"</span>, <span class="n">"sha256"</span>: <span class="s">"c41e…07ab"</span> },
+  <span class="n">"findings"</span>: [
+    { <span class="n">"ruleId"</span>: <span class="s">"QI-MASK-001"</span>, <span class="n">"severity"</span>: <span class="s">"critical"</span>, <span class="n">"confidence"</span>: 1.0,
+      <span class="n">"disposition"</span>: <span class="s">"auto-fix"</span>, <span class="n">"gate"</span>: [true, true, true, true, true, true],
+      <span class="n">"action"</span>: { <span class="n">"pr"</span>: <span class="s">"#12"</span>, <span class="n">"tests"</span>: [<span class="s">"pytest: pass"</span>, <span class="s">"sentinel verify: pass"</span>] },
+      <span class="n">"approval"</span>: <span class="s">"pending-review"</span>, <span class="n">"fingerprint"</span>: <span class="s">"a9f2…3c10"</span> }
+  ],
+  <span class="n">"artifacts"</span>: [ { <span class="n">"path"</span>: <span class="s">"index.html"</span>, <span class="n">"sha256"</span>: <span class="s">"77be…4f01"</span> } ],
+  <span class="n">"packSha256"</span>: <span class="s">"9f3c…a41e"</span>
+}</pre></div>
+    <p class="prose"><code>sentinel verify</code> recomputes every hash from the canonical JSON and the artifacts on disk and fails if anything differs. <code>index.html</code> is the reviewer-facing view (mock D).</p>
+  </div>
+</section>
+
+<section id="s10">
+  <div class="sh"><span class="num">§10</span><h2>Interface mocks</h2><p class="lede">Static, high-fidelity panels of what judges see. All identifiers are synthetic.</p></div>
+  <div class="body">
+
+    <div class="mock">
+      <div class="mcap"><h4>A. Monitoring cycle</h4><span>terminal</span></div>
+      <div class="term">
+        <div class="bar"><i></i><i></i><i></i><em>D:\Work\Quest\QI Sentinel</em></div>
+<pre><span class="t-dim">$</span> sentinel scan
+<span class="t-b">QI Sentinel 0.1.0</span>  <span class="t-dim">run-20260917-1402 · spec synthetic-2026 · policy v3 (enforce)</span>
+
+<span class="t-acc">collect </span>  38 inputs hashed · 1 log sample redacted             <span class="t-dim">0.7s</span>
+<span class="t-acc">scan    </span>  4 scanners                                           <span class="t-dim">1.9s</span>
+  <span class="t-crit">QI-MASK-001</span> <span class="t-crit">critical</span>  RPT.MEMBER_MEASURE.DOB has no masking policy
+  <span class="t-warn">QI-LOG-001 </span> <span class="t-warn">high    </span>  2 sensitive fields in measure-runner.log
+  <span class="t-warn">QI-SEM-001 </span> <span class="t-warn">high    </span>  CBP value set @2025 (manifest @2026); exclusion drift
+  <span class="t-info">QI-LIN-001 </span> <span class="t-info">medium  </span>  no lineage chain for measure COL
+<span class="t-acc">analyse </span>  Codex · QI-SEM-001 RCA (conf 0.86) · 2 patches drafted <span class="t-dim">38.4s</span>
+<span class="t-acc">gate    </span>  <span class="t-ok">2 auto-fix</span> · <span class="t-warn">2 escalate</span>
+<span class="t-acc">act     </span>  PR #12  restore masking policy + log redaction   <span class="t-ok">tests pass</span>
+          #13     CBP drift from spec                      <span class="t-dim">→ quality-analytics</span>
+          #14     COL lineage record                       <span class="t-dim">→ data-governance</span>
+<span class="t-acc">evidence</span>  artifacts/run-20260917-1402/index.html          <span class="t-ok">verify pass</span>
+
+Monitoring cycle: <span class="t-ok">COMPLETE</span>
+Findings:        4
+Auto-remediated: 2
+Escalated:       2
+Tests:           <span class="t-ok">PASS</span></pre>
+      </div>
+    </div>
+
+    <div class="mock">
+      <div class="mcap"><h4>B. Remediation pull request</h4><span>PR #12</span></div>
+      <div class="win">
+        <div class="top">
+          <h5>QI Sentinel: restore PHI masking and redact member fields in logs <span>#12</span></h5>
+          <div class="row"><span class="pill open">Open</span><span><b style="color:var(--ink)">qi-sentinel[bot]</b> wants to merge 2 commits from <code>sentinel/run-20260917-1402</code> into <code>main</code></span></div>
+        </div>
+        <div class="cols">
+          <div class="main">
+            <h6>Findings fixed</h6>
+            <p><span class="chip c-crit">critical</span> <code>QI-MASK-001</code> PHI-tagged <code>RPT.MEMBER_MEASURE.DOB</code> had no masking policy. Restored <code>GOV.PHI_MASK_DOB</code> from the last approved snapshot.</p>
+            <p><span class="chip c-esc">high</span> <code>QI-LOG-001</code> Synthetic MRN and DOB fields written by <code>measure-runner</code>. Added a redaction filter.</p>
+            <h6>Changes</h6>
+            <div class="diff">
+              <div class="fn">mock-platform/snowflake/policies/member_measure.sql</div>
+              <div class="l add">+ ALTER TABLE RPT.MEMBER_MEASURE MODIFY COLUMN DOB</div>
+              <div class="l add">+   SET MASKING POLICY GOV.PHI_MASK_DOB;</div>
+            </div>
+            <div class="diff">
+              <div class="fn">mock-platform/pipelines/logging.yml</div>
+              <div class="l">  handlers:</div>
+              <div class="l">    file: { path: logs/measure-runner.log }</div>
+              <div class="l add">+ filters:</div>
+              <div class="l add">+   redact: { fields: [mrn, dob, birth_date], replacement: "[REDACTED]" }</div>
+            </div>
+            <div class="checks">
+              <div><span>pytest (unit, policy, regression)</span><span class="okk">passed</span></div>
+              <div><span>sentinel verify</span><span class="okk">passed</span></div>
+              <div><span>policy v3: 6/6 gate conditions, both findings</span><span class="okk">allowed</span></div>
+              <div><span>merge</span><span class="pend">requires human review</span></div>
+            </div>
+          </div>
+          <dl class="side">
+            <dt>Disposition</dt><dd><span class="chip c-auto">auto-fix</span></dd>
+            <dt>Reviewers</dt><dd>security-oncall</dd>
+            <dt>Labels</dt><dd><span class="chip c-mute">phi-protection</span></dd>
+            <dt>Evidence</dt><dd class="mono" style="font-size:12px">run-20260917-1402</dd>
+            <dt>Fingerprints</dt><dd class="mono" style="font-size:12px">a9f2…3c10<br>5e01…b77d</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="mock">
+      <div class="mcap"><h4>C. Analyst escalation</h4><span>#13</span></div>
+      <div class="win">
+        <div class="top">
+          <h5>CBP measure logic has drifted from the synthetic-2026 spec <span>#13</span></h5>
+          <div class="row"><span class="pill issue">Needs analyst</span><span>opened by <b style="color:var(--ink)">qi-sentinel[bot]</b> · routed to quality-analytics</span></div>
+        </div>
+        <div class="cols">
+          <div class="main">
+            <h6>Expected vs. observed</h6>
+            <ul>
+              <li>Value set: spec manifest pins <code>VS_HYPERTENSION@2026</code>; <code>cbp_rate.sql</code> line 12 uses <code>@2025</code>.</li>
+              <li>Denominator exclusion: spec excludes hospice <em>or</em> palliative care; logic (lines 41–48) excludes hospice only.</li>
+            </ul>
+            <h6>Root cause</h6>
+            <p>The measure was written against the 2025 spec. The 2026 snapshot was added on 2026-06-02 without a logic update, and no test ties exclusions or value-set pins to spec sections.</p>
+            <h6>Impact</h6>
+            <p>Both divergences change population membership. On synthetic data, 412 members would leave the denominator and 37 would change numerator status.</p>
+            <h6>Draft patch <span class="chip c-mute">not applied</span></h6>
+            <div class="diff">
+              <div class="fn">mock-platform/measures/cbp/cbp_rate.sql</div>
+              <div class="l del">- FROM valueset('VS_HYPERTENSION', '2025')</div>
+              <div class="l add">+ FROM valueset('VS_HYPERTENSION', '2026')</div>
+              <div class="l">  WHERE vs.value_set IN ('HOSPICE_ENCOUNTER'</div>
+              <div class="l add">+                        ,'PALLIATIVE_CARE'</div>
+            </div>
+            <h6>Recommended next action</h6>
+            <p>Confirm the population change with the measure owner, then apply the patch and add a spec-conformance test. Blocked from auto-apply by gate condition 2 and <code>never_auto_apply: measure-semantics</code>.</p>
+          </div>
+          <dl class="side">
+            <dt>Disposition</dt><dd><span class="chip c-esc">escalate</span></dd>
+            <dt>Confidence</dt><dd>0.86</dd>
+            <dt>Spec reference</dt><dd class="mono" style="font-size:12px">cbp.yml #denominator.exclusions</dd>
+            <dt>Gate failed</dt><dd>1, 2, 3</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="mock">
+      <div class="mcap"><h4>D. Evidence pack</h4><span>artifacts/&lt;run-id&gt;/index.html</span></div>
+      <div class="report">
+        <h5>Monitoring cycle evidence</h5>
+        <div class="rm">run-20260917-1402 · commit 81f812b · spec synthetic-2026 (sha256 3d18…9b20) · policy v3 enforce · pack sha256 9f3c…a41e</div>
+        <div class="kp">
+          <div><b>4</b><span>findings</span></div>
+          <div><b style="color:#3d7550">2</b><span>auto-remediated</span></div>
+          <div><b style="color:#9a6414">2</b><span>escalated</span></div>
+          <div><b style="color:#3d7550">PASS</b><span>tests + verify</span></div>
+        </div>
+        <div class="tw" style="background:#fff;border-color:#dcd6cb"><table>
+          <thead><tr><th>Rule</th><th>Severity</th><th>Conf.</th><th>Gate</th><th>Disposition</th><th>Record</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="m">QI-MASK-001</td><td>critical</td><td>1.00</td><td>6/6</td><td>auto-fix</td><td>PR #12</td><td>pending review</td></tr>
+            <tr><td class="m">QI-LOG-001</td><td>high</td><td>0.99</td><td>6/6</td><td>auto-fix</td><td>PR #12</td><td>pending review</td></tr>
+            <tr><td class="m">QI-SEM-001</td><td>high</td><td>0.86</td><td>failed 1,2,3</td><td>escalate</td><td>#13</td><td>with analyst</td></tr>
+            <tr><td class="m">QI-LIN-001</td><td>medium</td><td>1.00</td><td>failed 1</td><td>escalate</td><td>#14</td><td>awaiting attestation</td></tr>
+          </tbody>
+        </table></div>
+        <p class="hash">Codex calls: 1 · prompt monitor.md sha256 e07d…11b4 · response sha256 4c2a…98ef · inputs redacted: yes · secrets scan: clean · sensitive-field scan: clean</p>
+      </div>
+    </div>
+
+    <div class="mock">
+      <div class="mcap"><h4>E. Results dashboard</h4><span class="stretch">stretch goal</span></div>
+      <div class="dash">
+        <div class="dt"><b>Quality Index platform posture</b><span>last run 14:02 UTC · next 15:00</span></div>
+        <div class="layers">
+          <div class="layer"><div class="ln">Databricks</div><div class="st"><span class="dot" style="background:var(--warn)"></span>1 escalated</div><div class="spark"><i style="height:20%"></i><i style="height:20%"></i><i style="height:20%"></i><i class="hit" style="height:55%"></i><i class="hit" style="height:90%"></i><i class="hit" style="height:90%"></i></div></div>
+          <div class="layer"><div class="ln">Snowflake</div><div class="st"><span class="dot" style="background:var(--ok)"></span>PR open</div><div class="spark"><i style="height:20%"></i><i style="height:20%"></i><i style="height:20%"></i><i style="height:20%"></i><i class="hit" style="height:100%"></i><i style="height:20%"></i></div></div>
+          <div class="layer"><div class="ln">Logs</div><div class="st"><span class="dot" style="background:var(--ok)"></span>PR open</div><div class="spark"><i style="height:20%"></i><i style="height:20%"></i><i class="hit" style="height:60%"></i><i class="hit" style="height:60%"></i><i class="hit" style="height:80%"></i><i style="height:20%"></i></div></div>
+          <div class="layer"><div class="ln">Lineage</div><div class="st"><span class="dot" style="background:var(--warn)"></span>1 escalated</div><div class="spark"><i style="height:20%"></i><i style="height:20%"></i><i style="height:20%"></i><i style="height:20%"></i><i class="hit" style="height:70%"></i><i class="hit" style="height:70%"></i></div></div>
+        </div>
+        <div class="tw" style="margin:0;border:0;border-radius:0"><table>
+          <thead><tr><th>Open item</th><th>Owner</th><th>Age</th><th>Record</th></tr></thead>
+          <tbody>
+            <tr><td>CBP drift from spec</td><td>quality-analytics</td><td class="m">0h</td><td>#13</td></tr>
+            <tr><td>COL lineage record</td><td>data-governance</td><td class="m">0h</td><td>#14</td></tr>
+            <tr><td>Masking + log redaction PR</td><td>security-oncall</td><td class="m">0h</td><td>PR #12</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="s11">
+  <div class="sh"><span class="num">§11</span><h2>Architecture decisions</h2><p class="lede">Recorded ADR-style so the pilot team inherits the reasoning, not just the code.</p></div>
+  <div class="body">
+
+    <article class="adr">
+      <header><div><span class="id">ADR-01</span><h4>Read exported metadata, not live platforms</h4></div><span class="chip c-auto">accepted</span></header>
+      <table><tbody>
+        <tr><th>Context</th><td>Live Databricks and Snowflake add auth, cost, and setup time, and raise PHI-proximity questions during a hackathon.</td></tr>
+        <tr><th>Decision</th><td>Scanners read files shaped like real exports (policy DDL, INFORMATION_SCHEMA JSON, lineage records) under <code>mock-platform/</code>. Live connectors implement the same collector interface later.</td></tr>
+        <tr><th>Alternatives</th><td>Snowflake trial and Databricks Community connections. Kept optional.</td></tr>
+        <tr><th>Consequences</th><td>Fast, reproducible, zero PHI risk. The pilot must prove the connectors.</td></tr>
+      </tbody></table>
+    </article>
+
+    <article class="adr">
+      <header><div><span class="id">ADR-02</span><h4>Code owns decisions; Codex owns reasoning and writing</h4></div><span class="chip c-auto">accepted</span></header>
+      <table><tbody>
+        <tr><th>Context</th><td>Auditors need repeatable dispositions. Model output varies between runs.</td></tr>
+        <tr><th>Decision</th><td>Rule IDs, severity, thresholds, auto-fix eligibility, checksums, and test outcomes are deterministic code. Codex provides RCA, patches, plain-language findings, and evidence narration under a validated schema.</td></tr>
+        <tr><th>Alternatives</th><td>One agent prompt deciding everything: simpler, but not reproducible or defensible.</td></tr>
+        <tr><th>Consequences</th><td>Same input, same disposition. Codex quality affects explanations and patches, never whether a change is allowed.</td></tr>
+      </tbody></table>
+    </article>
+
+    <article class="adr">
+      <header><div><span class="id">ADR-03</span><h4>Python with the Codex Python SDK</h4></div><span class="chip c-auto">accepted · v3.0, supersedes v1.0 and v2.0</span></header>
+      <table><tbody>
+        <tr><th>Context</th><td>v1.0 chose Python for build speed. v2.0 switched to TypeScript to match the repo README and the TypeScript Codex SDK. The build lead is more productive in Python, and OpenAI now publishes an official Python SDK, <code>openai-codex</code>, currently in beta.</td></tr>
+        <tr><th>Decision</th><td>Python 3.12, pytest, <code>pyproject.toml</code> with a <code>sentinel</code> CLI. <code>openai-codex</code> pinned to an exact version and imported only in <code>src/qi_sentinel/agent/</code>. The Codex Action in CI is unchanged. Policy and specs stay YAML/JSON.</td></tr>
+        <tr><th>Alternatives</th><td>TypeScript with the Codex SDK (v2.0). Community Python wrappers around the Codex CLI.</td></tr>
+        <tr><th>Consequences</th><td>Faster build for this team with no loss of Codex-native tooling. Beta APIs may change before 1.0; the version pin and single wrapper module contain that risk.</td></tr>
+      </tbody></table>
+    </article>
+
+    <article class="adr">
+      <header><div><span class="id">ADR-04</span><h4>Policy as versioned YAML with an allowlist and a hard floor</h4></div><span class="chip c-auto">accepted</span></header>
+      <table><tbody>
+        <tr><th>Context</th><td>Compliance owners must control agent autonomy and see who changed it.</td></tr>
+        <tr><th>Decision</th><td><code>config/policy.yml</code> holds rule eligibility, confidence threshold, file and command allowlists, <code>never_auto_apply</code> categories, and <code>merge: never</code>. Changes go through PR review; the policy hash is in every evidence pack.</td></tr>
+        <tr><th>Alternatives</th><td>Database-backed settings UI. OPA/Rego, which is the likely pilot upgrade.</td></tr>
+        <tr><th>Consequences</th><td>Autonomy changes are Git history. The demo can flip <code>mode</code> live.</td></tr>
+      </tbody></table>
+    </article>
+
+    <article class="adr">
+      <header><div><span class="id">ADR-05</span><h4>Evidence as hashed JSON plus HTML, with a verify command</h4></div><span class="chip c-auto">accepted</span></header>
+      <table><tbody>
+        <tr><th>Context</th><td>Evidence must be tamper-evident and readable by non-engineers.</td></tr>
+        <tr><th>Decision</th><td>Canonical <code>evidence.json</code> with SHA-256 over inputs, spec, policy, artifacts, and the pack; <code>index.html</code> generated from it; <code>sentinel verify</code> recomputes everything.</td></tr>
+        <tr><th>Alternatives</th><td>Append-only ledger or WORM storage: right for production, overbuilt for the PoC.</td></tr>
+        <tr><th>Consequences</th><td>Portable and verifiable. Storage immutability deferred to the pilot.</td></tr>
+      </tbody></table>
+    </article>
+
+    <article class="adr">
+      <header><div><span class="id">ADR-06</span><h4>Split scan and remediate jobs in GitHub Actions</h4></div><span class="chip c-auto">accepted</span></header>
+      <table><tbody>
+        <tr><th>Context</th><td>Remediation needs write access and an API key; scanning does not. Repo content is potentially adversarial prompt input.</td></tr>
+        <tr><th>Decision</th><td>Scheduled or manual triggers only. <code>scan</code> runs read-only; <code>remediate</code> gets <code>contents: write</code> and <code>pull-requests: write</code>, runs only in the owning repository, and uses the narrowest Codex sandbox. Codex Action pinned by commit SHA.</td></tr>
+        <tr><th>Alternatives</th><td>One job with write permissions, which is simpler but widens blast radius.</td></tr>
+        <tr><th>Consequences</th><td>Fork content never runs with secrets or write access.</td></tr>
+      </tbody></table>
+    </article>
+
+    <article class="adr">
+      <header><div><span class="id">ADR-07</span><h4>Value-set drift is escalated, not auto-fixed</h4></div><span class="chip c-auto">accepted · changes README</span></header>
+      <table><tbody>
+        <tr><th>Context</th><td>The original README auto-fixed an outdated value-set OID. A new value-set version changes which members fall into the numerator or denominator, which contradicts gate condition 2.</td></tr>
+        <tr><th>Decision</th><td>Fold value-set drift into <code>QI-SEM-001</code> (escalate). Replace the auto-fix slot with <code>QI-MASK-001</code>, a Snowflake masking-policy restore.</td></tr>
+        <tr><th>Alternatives</th><td>Keep the value-set auto-fix and weaken condition 2. Rejected: a quality analytics judge would catch it.</td></tr>
+        <tr><th>Consequences</th><td>The policy is internally consistent, the demo still shows 2 fixed and 2 escalated, and Snowflake coverage is restored.</td></tr>
+      </tbody></table>
+    </article>
+
+    <article class="adr">
+      <header><div><span class="id">ADR-08</span><h4>CLI, PR, and evidence pack as the demo surface</h4></div><span class="chip c-auto">accepted</span></header>
+      <table><tbody>
+        <tr><th>Context</th><td>A dashboard competes with the core loop for build hours.</td></tr>
+        <tr><th>Decision</th><td>Demo the terminal run, PR #12, escalation #13, and the evidence HTML. Dashboard only after phase 5 is rehearsed.</td></tr>
+        <tr><th>Alternatives</th><td>Dashboard-first: polished, but risks a loop that does not work end to end.</td></tr>
+        <tr><th>Consequences</th><td>Mock E shows direction; it is not built by default.</td></tr>
+      </tbody></table>
+    </article>
+  </div>
+</section>
+
+<section id="s12">
+  <div class="sh"><span class="num">§12</span><h2>Safety and controls</h2></div>
+  <div class="body">
+    <div class="tw"><table>
+      <thead><tr><th>Control</th><th>How the PoC enforces it</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Synthetic only</strong></td><td>All member, claim, encounter, log data, and specifications are synthetic. Seeds are documented in test fixtures.</td></tr>
+        <tr><td><strong>Control plane only</strong></td><td>Scanners read code, configs, policy exports, and metadata. Nothing reads table rows.</td></tr>
+        <tr><td><strong>Redact before reasoning</strong></td><td>Log samples are redacted during collect; Codex never receives raw log lines.</td></tr>
+        <tr><td><strong>No fabricated evidence</strong></td><td>Lineage templates are marked unattested; the agent never writes historical records.</td></tr>
+        <tr><td><strong>Bounded autonomy</strong></td><td>Six gate conditions, allowlisted files and commands, <code>never_auto_apply</code> floor, <code>merge: never</code>.</td></tr>
+        <tr><td><strong>Prompt-injection posture</strong></td><td>Repo files, issue text, commits, and PR content treated as untrusted input; dispositions never come from model output.</td></tr>
+        <tr><td><strong>CI hardening</strong></td><td>Trusted triggers, split permissions, no secrets or write access on fork content, Codex Action pinned by SHA.</td></tr>
+        <tr><td><strong>Network</strong></td><td>Agent internet disabled during the demo; spec snapshots committed locally.</td></tr>
+        <tr><td><strong>Publication hygiene</strong></td><td>Logs and evidence scanned for credentials and sensitive-field patterns before upload.</td></tr>
+        <tr><td><strong>Claims boundary</strong></td><td>Reports conformance to supplied synthetic rules only; does not certify HEDIS, CMS, HIPAA, or audit compliance.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="prose">A pilot with real PHI needs privacy, security, legal, and compliance review, an applicable OpenAI agreement and BAA, eligible services, and approved endpoint and retention configuration.</p>
+  </div>
+</section>
+
+<section id="s13">
+  <div class="sh"><span class="num">§13</span><h2>Build plan and demo</h2><p class="lede">Each phase ends with something that runs.</p></div>
+  <div class="body">
+    <ol class="phases">
+      <li><span class="pn">Phase 1</span><h4>Scaffold</h4><p><code>pyproject.toml</code> with the <code>sentinel</code> CLI, <code>mock-platform/</code> with four seeds, clean baseline fixtures, spec snapshot, <code>policy.yml</code>.</p><p class="exit">Exit: <code>sentinel seed</code> works; each seed findable by hand.</p></li>
+      <li><span class="pn">Phase 2</span><h4>Scanners</h4><p>Four scanners with pytest fixtures; findings JSON.</p><p class="exit">Exit: 4 findings on seeded, 0 on baseline (Codex not yet involved).</p></li>
+      <li><span class="pn">Phase 3</span><h4>Codex analysis</h4><p>Pinned <code>openai-codex</code> wrapper, <code>monitor.md</code> prompt, schema validation, RCA and patch drafting.</p><p class="exit">Exit: QI-SEM-001 analysis valid on three consecutive runs.</p></li>
+      <li><span class="pn">Phase 4</span><h4>Gate and actions</h4><p>Six-condition gate, branch + PR with tests, escalation records, fingerprint de-duplication.</p><p class="exit">Exit: 1 PR and 2 escalations; second run creates none.</p></li>
+      <li><span class="pn">Phase 5</span><h4>Evidence and CI</h4><p>Evidence JSON + HTML, <code>sentinel verify</code>, workflow with split jobs and the Codex Action.</p><p class="exit">Exit: green workflow run; local rehearsal inside 5 minutes, twice.</p></li>
+      <li><span class="pn">Phase 6</span><h4>Pitch assets</h4><p>Problem, loop diagram, live run, evidence pack, AlwaysOn Operations extension, pilot ask.</p><p class="exit">Exit: reviewed by one Quality Analytics person.</p></li>
+    </ol>
+    <h3>5-minute narrative</h3>
+    <div class="tw"><table>
+      <thead><tr><th class="m">Time</th><th>Beat</th><th>On screen</th></tr></thead>
+      <tbody>
+        <tr><td class="m">0:00</td><td>Measure integrity today is a deadline event; drift is found when a rate moves</td><td>Problem slide</td></tr>
+        <tr><td class="m">0:40</td><td>QI Sentinel makes it a continuously monitored property</td><td>Figure 1</td></tr>
+        <tr><td class="m">1:20</td><td>One cycle: four defects across Databricks, Snowflake, logs, lineage</td><td>Mock A</td></tr>
+        <tr><td class="m">2:30</td><td>Two fixes in one reviewable PR; why value-set drift was not auto-fixed</td><td>Mocks B and C</td></tr>
+        <tr><td class="m">3:20</td><td>Evidence on day one, verified by a command</td><td>Mock D</td></tr>
+        <tr><td class="m">3:50</td><td>Safety: switch policy to observe and re-run; same findings, no changes</td><td>Terminal</td></tr>
+        <tr><td class="m">4:20</td><td>Same loop for claims and interface exceptions</td><td>AlwaysOn Operations slide</td></tr>
+        <tr><td class="m">4:40</td><td>Ask: one Quality Analytics owner, one measure family, observe-mode pilot</td><td>Ask slide</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="s14">
+  <div class="sh"><span class="num">§14</span><h2>Risks</h2></div>
+  <div class="body">
+    <div class="tw"><table>
+      <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>Codex analysis for QI-SEM-001 is unstable live</td><td><span class="chip c-esc">medium</span></td><td><span class="chip c-crit">high</span></td><td>Scanner detects both divergences deterministically; Codex only explains. Schema validation, three-run exit criterion, recorded fallback</td></tr>
+        <tr><td>Codex Python SDK (beta) or Action interfaces change</td><td><span class="chip c-esc">medium</span></td><td><span class="chip c-esc">medium</span></td><td>Pin exact SDK version; isolate behind <code>src/qi_sentinel/agent/</code>; verify CI authentication in phase 3</td></tr>
+        <tr><td>Network or API failure during demo</td><td><span class="chip c-mute">low</span></td><td><span class="chip c-crit">high</span></td><td>Recorded run, pre-generated PR and evidence pack</td></tr>
+        <tr><td>Public repo conflicts with company policy</td><td><span class="chip c-esc">medium</span></td><td><span class="chip c-esc">medium</span></td><td>Q7: confirm before pushing; make private if needed</td></tr>
+        <tr><td>Over-scoping into dashboard or live connectors</td><td><span class="chip c-esc">medium</span></td><td><span class="chip c-esc">medium</span></td><td>ADR-08; phase exits are gates</td></tr>
+        <tr><td>Seeds do not reflect what the sponsor cares about</td><td><span class="chip c-esc">medium</span></td><td><span class="chip c-esc">medium</span></td><td>Q5: mirror their most recent real finding class</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="s15">
+  <div class="sh"><span class="num">§15</span><h2>Assumptions and open questions</h2><p class="lede">Each question has a working assumption so the build does not wait.</p></div>
+  <div class="body">
+    <div class="tw"><table>
+      <thead><tr><th class="m">ID</th><th>Question</th><th>Working assumption</th><th>Affects</th></tr></thead>
+      <tbody>
+        <tr><td class="m">Q1</td><td>Which measure families, and where does logic run today?</td><td>CBP and COL in Databricks</td><td>§5</td></tr>
+        <tr><td class="m">Q2</td><td>Do final rates land in Snowflake or get computed there?</td><td>Land there; reporting only</td><td>QI-MASK-001</td></tr>
+        <tr><td class="m">Q3</td><td>Build hours and team size?</td><td>~24 hours, 2–3 people</td><td>§13</td></tr>
+        <tr><td class="m">Q4</td><td>Portal field character limits?</td><td>Unknown; 500-character summary prepared</td><td>Submission</td></tr>
+        <tr><td class="m">Q5</td><td>Sponsor, and the finding class that hurt most recently?</td><td>None yet; masking drift is the headline</td><td>Seeds, pitch</td></tr>
+        <tr><td class="m">Q6</td><td>OpenAI Platform project key available for unattended Actions runs?</td><td>Yes, project-scoped, stored as a secret</td><td>§8</td></tr>
+        <tr><td class="m">Q7</td><td>Does company policy allow a public GitHub repo for hackathon code?</td><td>Yes for synthetic content; confirm before pushing</td><td>ADR-06</td></tr>
+        <tr><td class="m">Q8</td><td>How does <code>openai-codex</code> authenticate for unattended Actions runs?</td><td>Project-scoped API key; verify in phase 3</td><td>§8, ADR-03</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="s16">
+  <div class="sh"><span class="num">§16</span><h2>Publishing and roadmap</h2></div>
+  <div class="body">
+    <h3>Document history and publishing</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Version</th><th>Change</th><th>Audience</th><th>Format</th></tr></thead>
+      <tbody>
+        <tr><td class="m">v1.0</td><td>Initial draft from handoff: Python, six findings</td><td>Build team</td><td>Published page</td></tr>
+        <tr><td class="m">v2.0</td><td>Merged with repo README: TypeScript + Codex SDK/Action, four defects, value-set drift escalated, Snowflake masking seed added</td><td>Build team</td><td>Published page; source in <code>D:\Work\Quest\QI Sentinel</code></td></tr>
+        <tr><td class="m">v3.0</td><td>Switched to Python with the <code>openai-codex</code> SDK; README, brief, and doc updated together</td><td>Build team</td><td>Published page</td></tr>
+        <tr><td class="m">v3.1</td><td>Q1–Q8 answered</td><td>Sponsor, Quality Analytics</td><td>Shared link + PDF (A4)</td></tr>
+        <tr><td class="m">v3.2</td><td>After phase 5; mocks replaced by real screenshots</td><td>Hackathon judges</td><td>PDF attached to submission</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Roadmap</h3>
+    <ol class="phases">
+      <li><span class="pn">Now</span><h4>Hackathon</h4><p>Mock platform and synthetic spec, four scanners, policy gate, Codex-assisted fixes and escalations, PR workflow, evidence pack, lightweight dashboard if time allows.</p></li>
+      <li><span class="pn">Next</span><h4>Pilot</h4><p>One approved measure family and Quality Analytics owner. Licensed specification inputs, gold-standard evaluation cases and false-positive targets, security/privacy/legal/model-risk reviews. Observe mode before corrective PRs.</p></li>
+      <li><span class="pn">Then</span><h4>Harden</h4><p>Read-only live connectors to Unity Catalog and Snowflake metadata, OPA-based policy, WORM evidence storage, internal Git host.</p></li>
+      <li><span class="pn">Later</span><h4>Extend the loop</h4><p>AlwaysOn Operations: the same scan → analyse → gate → act → evidence loop for claims exceptions, interfaces, and access-control drift.</p></li>
+    </ol>
+  </div>
+</section>
+
+<footer class="foot"><span>QIS-DD-001 v3.0 · QI Sentinel PoC design document</span><span>Synthetic data only · derived from PoC Brief - QI Sentinel.md and README.md</span></footer>
+</main>
+</body>
+</html>
