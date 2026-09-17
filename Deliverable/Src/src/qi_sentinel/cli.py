@@ -9,6 +9,12 @@ import sys
 from typing import Sequence
 
 from qi_sentinel import __version__
+from qi_sentinel.evidence import (
+    EvidenceGenerationError,
+    PublicationSafetyError,
+    generate_evidence_pack,
+    verify_evidence_pack,
+)
 from qi_sentinel.models import findings_json
 from qi_sentinel.policy import PolicyConfigError, run_action_cycle
 from qi_sentinel.scanners import ScanContext, ScanInputError, scan_platform
@@ -104,9 +110,38 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     remediate_parser.set_defaults(handler=_remediate)
 
+    evidence_parser = subparsers.add_parser(
+        "evidence",
+        help="Run a policy cycle and generate a canonical evidence pack.",
+    )
+    evidence_parser.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Project root containing the synthetic platform and configuration.",
+    )
+    evidence_parser.add_argument(
+        "--run-id",
+        required=True,
+        help="Stable directory name created beneath artifacts/.",
+    )
+    evidence_parser.add_argument(
+        "--mode",
+        choices=("enforce", "observe"),
+        default="observe",
+        help="Policy mode; observe is the non-mutating default.",
+    )
+    evidence_parser.add_argument(
+        "--state",
+        type=Path,
+        default=Path("artifacts/phase4/action-state.json"),
+        help="Local idempotency state path, relative to --root unless absolute.",
+    )
+    evidence_parser.set_defaults(handler=_evidence)
+
     verify_parser = subparsers.add_parser(
         "verify",
-        help="Verify an evidence pack (available in Phase 5).",
+        help="Verify an evidence pack and every covered source hash.",
     )
     verify_parser.add_argument(
         "artifact",
@@ -114,7 +149,13 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Evidence directory or canonical evidence.json file.",
     )
-    verify_parser.set_defaults(handler=_not_implemented, phase="Phase 5")
+    verify_parser.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="Project root used to resolve the artifact and covered sources.",
+    )
+    verify_parser.set_defaults(handler=_verify)
 
     return parser
 
@@ -236,6 +277,56 @@ def _path_within_root(root: Path, path: Path) -> Path:
     except ValueError as error:
         raise ValueError("Output path must remain within the project root.") from error
     return resolved
+
+
+def _evidence(args: argparse.Namespace) -> int:
+    """Run the policy workflow and create a verified-publication candidate."""
+
+    root = args.root.resolve()
+    try:
+        action_result = run_action_cycle(
+            root,
+            mode=args.mode,
+            state_path=args.state,
+        )
+        pack = generate_evidence_pack(
+            root,
+            run_id=args.run_id,
+            action_result=action_result,
+        )
+    except (
+        EvidenceGenerationError,
+        PolicyConfigError,
+        PublicationSafetyError,
+        ScanInputError,
+        ValueError,
+    ) as error:
+        print(f"Evidence generation failed: {error}", file=sys.stderr)
+        return 2
+    print(f"Wrote canonical evidence pack to {pack.directory.relative_to(root).as_posix()}")
+    return 0
+
+
+def _verify(args: argparse.Namespace) -> int:
+    """Verify evidence, rendering, publication safety, and covered sources."""
+
+    if args.artifact is None:
+        print("Verification failed: an evidence directory or evidence.json path is required.", file=sys.stderr)
+        return 2
+    root = args.root.resolve()
+    try:
+        result = verify_evidence_pack(root, args.artifact)
+    except ValueError as error:
+        print(f"Verification failed: {error}", file=sys.stderr)
+        return 2
+    if not result.valid:
+        print("Evidence verification failed:", file=sys.stderr)
+        for error in result.errors:
+            print(f"  - {error}", file=sys.stderr)
+        return 1
+    relative = result.evidence_path.relative_to(root).as_posix()
+    print(f"Evidence verified: {relative} ({result.checked_source_count} covered sources)")
+    return 0
 
 
 def _not_implemented(args: argparse.Namespace) -> int:

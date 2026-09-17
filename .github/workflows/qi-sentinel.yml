@@ -1,0 +1,139 @@
+name: QI Sentinel
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      run_remediation:
+        description: "Prepare the local-only enforce-mode remediation payload"
+        required: false
+        default: false
+        type: boolean
+      run_codex_analysis:
+        description: "Run the optional read-only Codex review"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: qi-sentinel-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Read-only scan and evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: Deliverable/Src
+    steps:
+      - name: Check out the triggering revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: Deliverable/Src/pyproject.toml
+
+      - name: Install the package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run the complete test suite
+        run: python -m pytest -q
+
+      - name: Generate and verify evidence
+        id: evidence
+        shell: bash
+        run: |
+          run_id="ci-scan-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          sentinel evidence --mode observe --run-id "$run_id"
+          sentinel verify "artifacts/$run_id"
+          echo "artifact_path=artifacts/$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Upload verified evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qi-sentinel-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: Deliverable/Src/${{ steps.evidence.outputs.artifact_path }}
+          if-no-files-found: error
+          retention-days: 14
+
+  remediate:
+    name: Owning-repository remediation preparation
+    needs: scan
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.run_remediation == true &&
+      github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: Deliverable/Src
+    steps:
+      - name: Check out without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: Deliverable/Src/pyproject.toml
+
+      - name: Install the package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Prepare the policy-approved local payload
+        run: sentinel remediate --mode enforce --output artifacts/ci-remediation/action-result.json
+
+      - name: Upload the unmerged remediation payload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qi-sentinel-remediation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: Deliverable/Src/artifacts/ci-remediation/action-result.json
+          if-no-files-found: error
+          retention-days: 14
+
+  codex-analysis:
+    name: Optional read-only Codex review
+    needs: scan
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.run_codex_analysis == true &&
+      github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the triggering revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run the bounded Codex review
+        uses: openai/codex-action@7c168a233489ca36cb495409e8f1fba7b522bb40 # v1.11
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: Deliverable/Src/.github/codex/prompts/ci-review.md
+          working-directory: Deliverable/Src
+          permission-profile: ":read-only"
+          codex-version: "0.154.0"
+          codex-args: '["--ephemeral"]'

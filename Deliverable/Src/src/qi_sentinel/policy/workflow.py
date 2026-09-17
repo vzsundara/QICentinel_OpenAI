@@ -128,12 +128,17 @@ def _test_staged_changes(
     if not proposals:
         return runner(root, commands)
     with tempfile.TemporaryDirectory(prefix="qi-sentinel-phase4-") as temporary:
-        stage = Path(temporary) / "project"
+        stage = Path(temporary) / "repository" / "Deliverable" / "Src"
         shutil.copytree(
             root,
             stage,
             ignore=shutil.ignore_patterns(".venv", "artifacts", ".pytest_cache", "__pycache__", "*.pyc"),
         )
+        repository_workflow = root.parents[1] / ".github" / "workflows" / "qi-sentinel.yml"
+        if repository_workflow.is_file():
+            staged_workflow = stage.parents[1] / ".github" / "workflows" / "qi-sentinel.yml"
+            staged_workflow.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(repository_workflow, staged_workflow)
         for proposal in proposals:
             apply_known_remediation(stage, proposal)
         return runner(stage, commands)

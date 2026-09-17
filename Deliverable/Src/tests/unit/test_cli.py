@@ -7,6 +7,7 @@ import json
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from qi_sentinel.cli import main
@@ -25,13 +26,43 @@ class CliSmokeTests(unittest.TestCase):
         self.assertIn("valid (4 seeds)", output.getvalue())
         self.assertIn("sentinel scan", output.getvalue())
 
-    def test_phase_five_command_fails_safely(self) -> None:
+    def test_verify_requires_an_artifact(self) -> None:
         output = io.StringIO()
-        with redirect_stdout(output):
-            status = main(["verify"])
+        with patch("sys.stderr", output):
+            status = main(["verify", "--root", str(PROJECT_ROOT)])
 
         self.assertEqual(status, 2)
-        self.assertIn("Phase 5", output.getvalue())
+        self.assertIn("path is required", output.getvalue())
+
+    def test_verify_reports_valid_pack(self) -> None:
+        verification = SimpleNamespace(
+            valid=True,
+            evidence_path=PROJECT_ROOT / "artifacts/demo/evidence.json",
+            checked_source_count=12,
+            errors=(),
+        )
+        output = io.StringIO()
+        with patch("qi_sentinel.cli.verify_evidence_pack", return_value=verification):
+            with redirect_stdout(output):
+                status = main(["verify", "artifacts/demo", "--root", str(PROJECT_ROOT)])
+
+        self.assertEqual(status, 0)
+        self.assertIn("Evidence verified", output.getvalue())
+
+    def test_evidence_command_generates_observe_pack(self) -> None:
+        pack = SimpleNamespace(directory=PROJECT_ROOT / "artifacts/demo")
+        output = io.StringIO()
+        with patch("qi_sentinel.cli.run_action_cycle", return_value=object()) as cycle:
+            with patch("qi_sentinel.cli.generate_evidence_pack", return_value=pack) as generate:
+                with redirect_stdout(output):
+                    status = main(
+                        ["evidence", "--root", str(PROJECT_ROOT), "--run-id", "demo"]
+                    )
+
+        self.assertEqual(status, 0)
+        self.assertEqual(cycle.call_args.kwargs["mode"], "observe")
+        self.assertEqual(generate.call_args.kwargs["run_id"], "demo")
+        self.assertIn("artifacts/demo", output.getvalue())
 
     def test_remediate_emits_action_cycle_json(self) -> None:
         class FakeResult:

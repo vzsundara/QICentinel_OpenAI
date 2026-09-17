@@ -111,37 +111,39 @@ The HTML report is derived from the canonical JSON and exists for reviewer reada
 
 ## Repository structure
 
-Implementation paths are relative to `Deliverable/Src/`, the source-project root.
+Application paths are relative to `Deliverable/Src/`, the source-project root. The workflow is the one exception: GitHub requires it at the repository-level `.github/workflows/` path.
 
 ```text
-Deliverable/Src/
+repository-root/
 |-- .github/
-|   |-- workflows/qi-sentinel.yml
-|   `-- codex/prompts/monitor.md
-|-- config/
-|   |-- policy.yml
-|   `-- sentinel.yml
-|-- mock-platform/
-|   |-- measures/
-|   |-- pipelines/
-|   |-- snowflake/
-|   |-- logs/
-|   `-- lineage/
-|-- specs/
-|   `-- synthetic-2026/
-|-- src/qi_sentinel/
-|   |-- agent/
-|   |-- evidence/
-|   |-- policy/
-|   |-- scanners/
-|   `-- cli.py
-|-- tests/
-|   |-- fixtures/
-|   |-- integration/
-|   `-- unit/
-|-- artifacts/
-|-- pyproject.toml
-`-- README.md
+|   `-- workflows/qi-sentinel.yml
+`-- Deliverable/Src/
+    |-- .github/
+    |   `-- codex/prompts/monitor.md
+    |-- config/
+    |   |-- policy.yml
+    |   `-- sentinel.yml
+    |-- mock-platform/
+    |   |-- measures/
+    |   |-- pipelines/
+    |   |-- snowflake/
+    |   |-- logs/
+    |   `-- lineage/
+    |-- specs/
+    |   `-- synthetic-2026/
+    |-- src/qi_sentinel/
+    |   |-- agent/
+    |   |-- evidence/
+    |   |-- policy/
+    |   |-- scanners/
+    |   `-- cli.py
+    |-- tests/
+    |   |-- fixtures/
+    |   |-- integration/
+    |   `-- unit/
+    |-- artifacts/
+    |-- pyproject.toml
+    `-- README.md
 ```
 
 ## CLI contract

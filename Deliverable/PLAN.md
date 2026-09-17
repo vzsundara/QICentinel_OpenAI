@@ -6,9 +6,9 @@ Build a reliable hackathon PoC in which one command detects four synthetic defec
 
 ## Plan status
 
-**Current milestone:** Phase 4 policy gate and local actions complete; Phase 0 external decisions remain
+**Current milestone:** Phase 5 evidence and CI implementation complete locally; live CI verification remains
 **Assessment date:** 17 September 2026  
-**Overall state:** Phases 1 through 4 implemented and tested under `Deliverable/Src/`
+**Overall state:** Phases 1 through 5 implemented locally; Phase 5 GitHub execution remains environment-owned
 
 | Phase | Status | Depends on | Completion evidence |
 | --- | --- | --- | --- |
@@ -17,21 +17,21 @@ Build a reliable hackathon PoC in which one command detects four synthetic defec
 | 2. Deterministic scanners | Complete locally | Phase 1 | Four seeded findings, zero baseline findings, deterministic JSON |
 | 3. Codex analysis | Complete locally | Phase 2 | Contract suite plus a schema-valid live read-only semantic analysis |
 | 4. Policy gate and actions | Complete locally | Phases 2–3 | Two fixes in one local PR payload, two escalations, and idempotent rerun |
-| 5. Evidence and CI | Not started | Phase 4 | Verified evidence pack and green least-privilege workflow |
+| 5. Evidence and CI | Implemented locally; CI pending | Phase 4 | Locally verified evidence pack and configured least-privilege workflow |
 | 6. Demo and pitch | Not started | Phase 5 | Two successful five-minute rehearsals and reviewer feedback |
 
 ### Current repository baseline
 
 | Item | Observed state | Required action |
 | --- | --- | --- |
-| Git | Installed; current branch is `feature/phase-4-policy-actions` | Keep the Phase 4 implementation reviewable and commit after review |
-| Working tree | Phase 4 implementation changes are present on the feature branch | Review and commit the completed phase |
+| Git | Installed; current branch is `feature/phase-5-evidence-ci` | Keep the Phase 5 implementation reviewable and commit after review |
+| Working tree | Phase 5 implementation changes are present on the feature branch | Review and commit the completed phase |
 | Python | A Python 3.14.5 virtual environment exists at `Deliverable/Src/.venv` | Install or select Python 3.12 before final CI parity testing |
 | Codex CLI | Bundled `0.154.0` is authenticated with ChatGPT | Reverify unattended authentication during Phase 5 CI work |
 | GitHub CLI | Not installed or not on `PATH` | Install and authenticate before PR or Actions work |
 | Repository instructions | Root-level `AGENTS.md` is present | Keep repository-wide safety rules concise and current |
 | Ignore rules | `Deliverable/Src/.gitignore` excludes the local environment, credentials, caches, and artifacts | Add broader repository rules later only if needed |
-| Application and scanners | Phases 1 through 4 are implemented under `Deliverable/Src/` | Review Phase 4 output before beginning evidence and CI work |
+| Application and scanners | Phases 1 through 5 are implemented locally | Run the configured workflow in the owning GitHub repository before claiming live CI completion |
 
 Status in this table is observational, not proof of authentication, authorization, or external-service availability.
 
@@ -178,22 +178,24 @@ The PoC is complete when all of the following are demonstrated from a clean chec
 
 ## Phase 5 — Evidence and CI
 
+**Status:** Implemented and verified locally on 17 September 2026. The suite contains 69 passing tests. Two installed-CLI rehearsals generated and verified separate evidence packs covering 34 sources each. Live GitHub Actions execution, secret availability, and actual external pull-request creation have not been claimed or tested.
+
 ### Work
 
-- Generate canonical `evidence.json` and reviewer-facing `index.html`.
-- Hash all inputs, spec, policy, prompts, results, tests, and artifacts.
-- Implement `sentinel verify` with clear tamper and missing-file failures.
-- Add secret and synthetic-sensitive-pattern scans before publication.
-- Create separate GitHub Actions scan and remediation jobs.
-- Restrict triggers and permissions; pin third-party actions and the Codex action.
-- Upload the evidence pack as a workflow artifact.
+- [x] Generate canonical `evidence.json` and reviewer-facing `index.html`.
+- [x] Hash all inputs, spec, policy, prompts, results, tests, and artifacts.
+- [x] Implement `sentinel verify` with clear tamper and missing-file failures.
+- [x] Add secret and synthetic-sensitive-pattern scans before publication.
+- [x] Create separate GitHub Actions scan and remediation jobs.
+- [x] Restrict triggers and permissions; pin third-party actions and the Codex action.
+- [x] Configure upload of the verified evidence pack as a workflow artifact.
 
 ### Exit criteria
 
-- A modified artifact causes `sentinel verify` to fail.
-- Local and CI results agree.
-- The workflow completes green with the intended permissions.
-- A local five-minute rehearsal succeeds twice.
+- [x] A modified or missing covered artifact causes `sentinel verify` to fail.
+- [ ] Local and CI results agree; a live owning-repository run is still required.
+- [ ] The workflow completes green with the intended permissions; live execution is still required.
+- [x] A local five-minute rehearsal succeeds twice.
 
 ## Phase 6 — Demo and pitch assets
 
