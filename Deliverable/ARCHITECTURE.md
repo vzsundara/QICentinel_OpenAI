@@ -68,7 +68,7 @@ All Codex integration is isolated under `src/qi_sentinel/agent/`. The adapter:
 - treats repository content as untrusted data, not instructions;
 - returns narrative, RCA, recommended next action, and optional patch drafts.
 
-The SDK and action versions must be pinned after their current official interfaces are verified.
+The official stable Python SDK is pinned as `openai-codex==0.154.0`. The adapter uses an ephemeral read-only thread, the enterprise-compatible auto-review approval mode, and a JSON Schema supplied to `Thread.run`; CI action pinning remains a Phase 5 decision.
 
 ### Policy gate
 

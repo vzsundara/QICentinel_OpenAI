@@ -16,6 +16,15 @@ runtime:
   redact_before_model_analysis: true
   deterministic_output: true
 
+analysis:
+  provider: openai-codex
+  sdk_version: 0.154.0
+  prompt: .github/codex/prompts/monitor.md
+  sandbox: read-only
+  approval_mode: auto_review
+  supported_rules:
+    - QI-SEM-001
+
 required_measures:
   - CBP
   - COL

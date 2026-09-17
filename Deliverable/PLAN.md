@@ -6,16 +6,16 @@ Build a reliable hackathon PoC in which one command detects four synthetic defec
 
 ## Plan status
 
-**Current milestone:** Phase 2 deterministic scanners complete locally; Phase 0 external decisions remain  
+**Current milestone:** Phase 3 Codex analysis complete locally; Phase 0 external decisions remain
 **Assessment date:** 17 September 2026  
-**Overall state:** Phases 1 and 2 implemented and tested under `Deliverable/Src/`
+**Overall state:** Phases 1 through 3 implemented and tested under `Deliverable/Src/`
 
 | Phase | Status | Depends on | Completion evidence |
 | --- | --- | --- | --- |
 | 0. Readiness and decisions | In progress | None | Readiness checklist passes and decisions are recorded |
 | 1. Scaffold | Complete locally | Phase 0 | Installable package, working CLI shell, and inspectable fixtures |
 | 2. Deterministic scanners | Complete locally | Phase 1 | Four seeded findings, zero baseline findings, deterministic JSON |
-| 3. Codex analysis | Not started | Phase 2 | Three consecutive schema-valid semantic analyses |
+| 3. Codex analysis | Complete locally | Phase 2 | Contract suite plus a schema-valid live read-only semantic analysis |
 | 4. Policy gate and actions | Not started | Phases 2–3 | Two fixes, two escalations, and idempotent rerun |
 | 5. Evidence and CI | Not started | Phase 4 | Verified evidence pack and green least-privilege workflow |
 | 6. Demo and pitch | Not started | Phase 5 | Two successful five-minute rehearsals and reviewer feedback |
@@ -27,11 +27,11 @@ Build a reliable hackathon PoC in which one command detects four synthetic defec
 | Git | Installed; current branch is `main` | Keep implementation work reviewable on a feature branch |
 | Working tree | `Deliverable/` is untracked | Review and commit the agreed document baseline before implementation |
 | Python | A Python 3.14.5 virtual environment exists at `Deliverable/Src/.venv` | Install or select Python 3.12 before final CI parity testing |
-| Codex CLI | `0.154.0-alpha.6.2` is installed | Verify authentication with a read-only smoke test |
+| Codex CLI | Bundled `0.154.0` is authenticated with ChatGPT | Reverify unattended authentication during Phase 5 CI work |
 | GitHub CLI | Not installed or not on `PATH` | Install and authenticate before PR or Actions work |
-| Repository instructions | `AGENTS.md` is absent | Add the agreed synthetic-data and safety rules |
+| Repository instructions | Root-level `AGENTS.md` is present | Keep repository-wide safety rules concise and current |
 | Ignore rules | `Deliverable/Src/.gitignore` excludes the local environment, credentials, caches, and artifacts | Add broader repository rules later only if needed |
-| Application and scanners | Implemented under `Deliverable/Src/` | Review Phase 2 output before beginning Codex integration |
+| Application and scanners | Phases 1 through 3 are implemented under `Deliverable/Src/` | Review Phase 3 output before beginning the policy gate |
 
 Status in this table is observational, not proof of authentication, authorization, or external-service availability.
 
@@ -59,20 +59,20 @@ The PoC is complete when all of the following are demonstrated from a clean chec
 - [x] Confirm Git is installed.
 - [ ] Install GitHub CLI, authenticate, and verify the required repository and workflow scopes.
 - [x] Confirm Codex CLI is installed.
-- [ ] Verify Codex authentication with a read-only repository-summary prompt.
-- [ ] Add `AGENTS.md` containing the synthetic-only, no-fabrication, policy, and no-merge rules.
+- [x] Verify Codex authentication with a live read-only `QI-SEM-001` analysis prompt.
+- [x] Add root-level `AGENTS.md` containing the synthetic-only, no-fabrication, policy, and no-merge rules.
 - [ ] Add `.gitignore` entries for `.venv/`, `.env`, `artifacts/`, `__pycache__/`, `.pytest_cache/`, and coverage output.
 - [ ] Commit the accepted documentation and readiness files as a clean baseline.
-- [ ] Verify the currently supported Codex SDK package, version, authentication method, and GitHub Action interface against official documentation.
+- [x] Verify the currently supported Codex SDK package, version, and local authentication method against official documentation; GitHub Action verification remains in Phase 5.
 - [ ] Record final answers for open questions Q1 through Q8 or retain explicit working assumptions.
 
 ### Exit criteria
 
 - [ ] Clean committed baseline and working Python 3.12 environment.
 - [ ] Repository visibility decision recorded.
-- [ ] Read-only Codex smoke test succeeds.
+- [x] Read-only Codex smoke test succeeds.
 - [ ] GitHub CLI authentication succeeds.
-- [ ] Repository instructions and ignore rules are present.
+- [x] Repository instructions and source-project ignore rules are present.
 - [ ] No credentials exist in tracked files.
 - [ ] Phase 1 may proceed without unresolved safety or access blockers.
 
@@ -137,21 +137,23 @@ The PoC is complete when all of the following are demonstrated from a clean chec
 
 ## Phase 3 — Codex analysis
 
+**Status:** Complete locally on 17 September 2026. The official stable Python SDK is pinned to `openai-codex==0.154.0`; contract tests cover bounded context, structured validation, prompt injection, unavailable service behavior, and three consecutive valid analyses. A live read-only analysis also succeeded through the authenticated ChatGPT session with deterministic fields preserved and its optional patch left unapplied.
+
 ### Work
 
-- Pin the supported Codex integration version and isolate it under `src/qi_sentinel/agent/`.
-- Create the versioned monitoring prompt from [PROMPTS.md](PROMPTS.md).
-- Build an allowlisted and redacted context bundle for `QI-SEM-001` and narrative enrichment.
-- Validate structured output and reject unknown rules, unsupported actions, or instruction-following from repository content.
-- Capture prompt, input, and response hashes without exposing secrets or sensitive values.
-- Provide a deterministic fallback narrative for an unavailable model so detection and evidence can still complete honestly.
+- [x] Pin the supported Codex integration version and isolate it under `src/qi_sentinel/agent/`.
+- [x] Create the versioned monitoring prompt from [PROMPTS.md](PROMPTS.md).
+- [x] Build an allowlisted and redacted context bundle for `QI-SEM-001` and narrative enrichment.
+- [x] Validate structured output and reject unknown rules, unsupported actions, or instruction-following from repository content.
+- [x] Capture prompt, input, and response hashes without exposing secrets or sensitive values.
+- [x] Provide a deterministic fallback narrative for an unavailable model so detection and evidence can still complete honestly.
 
 ### Exit criteria
 
-- `QI-SEM-001` returns schema-valid RCA on three consecutive test runs.
-- Disposition remains `escalate` regardless of model wording.
-- Raw sensitive log values never reach the model.
-- Authentication behavior for unattended execution is documented.
+- [x] `QI-SEM-001` returns schema-valid RCA on three consecutive test runs.
+- [x] Disposition remains `escalate` regardless of model wording.
+- [x] Raw sensitive log values never reach the model.
+- [x] Authentication behavior for unattended execution is documented; live CI authentication verification remains deferred until the owning environment is available.
 
 ## Phase 4 — Policy gate and actions
 
